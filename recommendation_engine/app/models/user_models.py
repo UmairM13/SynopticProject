@@ -10,7 +10,7 @@ class User(db.Model):
     age = db.Column(db.Integer)
     preferred_destination = db.Column(db.String(255))
     past_destinations = db.Column(db.String(255))
-    budget = db.Column(db.float)
+    budget = db.Column(db.Float)
     holiday_type = db.Column(db.String(255))
     
     
