@@ -1,78 +1,90 @@
-import sqlite3
+import pymysql.connections
+import os
+from dotenv import load_dotenv
 
-conn = sqlite3.connect('../db.sqlite')
-cursor = conn.cursor()
+# Load environment variables from .env file
+load_dotenv()
 
+# Fetch database connection details from environment variables
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_NAME = os.getenv("DB_NAME")
 
-### Create the Destinations table
-cursor.execute(
-    """
-               CREATE TABLE IF NOT EXISTS destinations(
-               id INTEGER PRIMARY KEY AUTOINCREMENT,
-               name TEXT NOT NULL,
-               country TEXT NOT NULL,
-               off_season_start TEXT NOT NULL,
-               off_season_end TEXT NOT NULL,
-               avg_daily_budget REAL NOT NULL,
-               currency TEXT ,
-               climate TEXT ,
-               terrain TEXT,
-               language TEXT,
-               safety_rating REAL);
-               """) 
-
-
-### Create the travel cost table
-cursor.execute(
-    """
-               CREATE TABLE IF NOT EXISTS travel_costs( 
-               id INTEGER PRIMARY KEY AUTOINCREMENT,
-               destination_id INTEGER NOT NULL,
-               departure_city TEXT NOT NULL,
-               departure_country TEXT NOT NULL,
-               flight_cost REAL,
-               train_cost REAL,
-               hotel_cost REAL,
-               user_id INTEGER NOT NULL,
-               FOREIGN KEY(destination_id) REFERENCES destinations(id)
-               FOREIGN KEY(user_id) REFERENCES users(id)
-               );
-                """) 
-
-
-### Create attractions table
-cursor.execute(
-    """
-               CREATE TABLE IF NOT EXISTS attractions(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                destination_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                type TEXT,
-                description TEXT,
-                entry_fee REAL,
-                FOREIGN KEY(destination_id) REFERENCES destinations(id)
-                );
-                """) 
-
-
-### Create the user table
-cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nationality TEXT,
-    current_city TEXT,
-    current_country TEXT,
-    age INTEGER,
-    preferred_destination TEXT,
-    past_destinations TEXT,
-    budget REAL,
-    holiday_type TEXT
-);
-"""
+# Connect to the MySQL database
+connection = pymysql.connect(
+    host=DB_HOST,
+    user=DB_USER,
+    password=DB_PASSWORD,
+    database=DB_NAME
 )
 
-conn.commit()
-conn.close()
+cursor = connection.cursor()
 
-print("Tables created successfully")
+# Create Destinations table
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS destinations(
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        country VARCHAR(255) NOT NULL,
+        off_season_start VARCHAR(50) NOT NULL,
+        off_season_end VARCHAR(50) NOT NULL,
+        avg_daily_budget DECIMAL(10,2) NOT NULL,
+        currency VARCHAR(10),
+        climate VARCHAR(100),
+        terrain VARCHAR(100),
+        language VARCHAR(100),
+        safety_rating DECIMAL(3,2)
+    );
+""")
+
+# Create Travel Costs table
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS travel_costs( 
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        destination_id INT NOT NULL,
+        departure_city VARCHAR(255) NOT NULL,
+        departure_country VARCHAR(255) NOT NULL,
+        flight_cost DECIMAL(10,2),
+        train_cost DECIMAL(10,2),
+        hotel_cost DECIMAL(10,2),
+        user_id INT NOT NULL,
+        FOREIGN KEY(destination_id) REFERENCES destinations(id) ON DELETE CASCADE,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+""")
+
+# Create Attractions table
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS attractions(
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        destination_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        type VARCHAR(100),
+        description TEXT,
+        entry_fee DECIMAL(10,2),
+        FOREIGN KEY(destination_id) REFERENCES destinations(id) ON DELETE CASCADE
+    );
+""")
+
+# Create Users table
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nationality VARCHAR(100),
+        current_city VARCHAR(255),
+        current_country VARCHAR(255),
+        age INT,
+        preferred_destination VARCHAR(255),
+        past_destinations TEXT,
+        budget DECIMAL(10,2),
+        holiday_type VARCHAR(100)
+    );
+""")
+
+# Commit changes and close the connection
+connection.commit()
+cursor.close()
+connection.close()
+
+print("Tables created successfully in MySQL database.")
