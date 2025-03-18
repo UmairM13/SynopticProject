@@ -38,6 +38,21 @@ cursor.execute("""
     );
 """)
 
+# Create Users table
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nationality VARCHAR(100),
+        current_city VARCHAR(255),
+        current_country VARCHAR(255),
+        age INT,
+        preferred_destination VARCHAR(255),
+        past_destinations TEXT,
+        budget DECIMAL(10,2),
+        holiday_type VARCHAR(100)
+    );
+""")
+
 # Create Travel Costs table
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS travel_costs( 
@@ -67,20 +82,7 @@ cursor.execute("""
     );
 """)
 
-# Create Users table
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nationality VARCHAR(100),
-        current_city VARCHAR(255),
-        current_country VARCHAR(255),
-        age INT,
-        preferred_destination VARCHAR(255),
-        past_destinations TEXT,
-        budget DECIMAL(10,2),
-        holiday_type VARCHAR(100)
-    );
-""")
+
 
 # Commit changes and close the connection
 connection.commit()
