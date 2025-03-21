@@ -4,7 +4,7 @@ import pickle
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
 # Load cleaned data from data_loading.py
-from recommendation_engine.processing.data_collection import users_df, destinations_df, travel_costs_df
+from data_collection import users_df, destinations_df, travel_costs_df
 
 # One-Hot Encoding for categorical features
 ohe_features = ['country', 'climate', 'terrain', 'language']
@@ -34,7 +34,9 @@ else:
     print("Warning: 'holiday_type' column not found in either DataFrame!")
 
 # Define save path as the script's directory
-save_dir = os.path.dirname(os.path.abspath(__file__))
+base_dir = os.path.dirname(os.path.abspath(__file__))
+save_dir = os.path.join(base_dir, "processed_data")
+os.makedirs(save_dir, exist_ok=True)
 processed_dest_file = os.path.join(save_dir, "processed_destinations.pkl")
 processed_users_file = os.path.join(save_dir, "processed_users.pkl")
 
