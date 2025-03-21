@@ -4,7 +4,7 @@ import pickle
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
 # Load cleaned data from data_loading.py
-from data_loading import users_df, destinations_df, travel_costs_df
+from recommendation_engine.processing.data_collection import users_df, destinations_df, travel_costs_df
 
 # One-Hot Encoding for categorical features
 ohe_features = ['country', 'climate', 'terrain', 'language']
