@@ -100,6 +100,9 @@ users_df['budget'] = users_df['budget'].astype(float)
 
 destinations_df['off_season_start'] = pd.to_datetime(destinations_df['off_season_start'])
 destinations_df['off_season_end'] = pd.to_datetime(destinations_df['off_season_end'])
+destinations_df["off_season_start"] = pd.to_datetime(destinations_df["off_season_start"]).apply(lambda x: x.month)
+destinations_df["off_season_end"] = pd.to_datetime(destinations_df["off_season_end"]).apply(lambda x: x.month)
+
 
 travel_costs_df['flight_cost'] = travel_costs_df['flight_cost'].astype(float)
 travel_costs_df['train_cost'] = travel_costs_df['train_cost'].astype(float)
@@ -126,9 +129,17 @@ current_month = pd.to_datetime('today').month
 
 # Apply the function to determine off-season status
 destinations_df['is_off_season'] = destinations_df.apply(
-    lambda row: is_off_season(row['off_season_start'].month, row['off_season_end'].month, current_month), axis=1
+    lambda row: is_off_season(row['off_season_start'], row['off_season_end'], current_month), axis=1
 )
 
+# Safer filling for budget and costs
+users_df['budget'].fillna(users_df['budget'].mean() if not users_df['budget'].isna().all() else 0, inplace=True)
+travel_costs_df.fillna({'flight_cost': travel_costs_df['flight_cost'].mean() or 0,
+                         'train_cost': travel_costs_df['train_cost'].mean() or 0,
+                         'hotel_cost': travel_costs_df['hotel_cost'].mean() or 0}, inplace=True)
+
+# Split past destinations if stored as a string
+users_df['past_destinations'] = users_df['past_destinations'].apply(lambda x: x.split(',') if isinstance(x, str) else [])
 
 print("\nDestinations DataFrame with Corrected Off-Season Flag:")
 print(destinations_df[['name', 'off_season_start', 'off_season_end', 'is_off_season']])
