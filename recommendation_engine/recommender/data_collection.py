@@ -99,16 +99,6 @@ month_map = {
 destinations_df["off_season_start"] = destinations_df["off_season_start"].map(month_map)
 destinations_df["off_season_end"] = destinations_df["off_season_end"].map(month_map)
 
-# Determine if a destination is in off-season
-current_month = pd.to_datetime("today").month
-
-def is_off_season(start, end, current):
-    return start <= current <= end if start <= end else current >= start or current <= end
-
-destinations_df["is_off_season"] = destinations_df.apply(
-    lambda row: is_off_season(row["off_season_start"], row["off_season_end"], current_month), axis=1
-)
-
 # Ensure unique records
 users_df.drop_duplicates(inplace=True)
 destinations_df.drop_duplicates(inplace=True)
@@ -118,6 +108,23 @@ travel_costs_df.drop_duplicates(inplace=True)
 users_df["past_destinations"] = users_df["past_destinations"].apply(
     lambda x: x.split(",") if isinstance(x, str) else []
 )
+
+# Get the current directory of the script
+current_directory = os.path.dirname(os.path.realpath(__file__))
+
+# Define the 'processed_data' folder path within the current directory
+processed_data_dir = os.path.join(current_directory, 'processed_data')
+
+# Create the 'processed_data' folder if it doesn't exist
+os.makedirs(processed_data_dir, exist_ok=True)
+
+# Save the DataFrames to CSV files in the 'processed_data' folder
+users_df.to_csv(os.path.join(processed_data_dir, 'users.csv'), index=False)
+destinations_df.to_csv(os.path.join(processed_data_dir, 'destinations.csv'), index=False)
+travel_costs_df.to_csv(os.path.join(processed_data_dir, 'travel_costs.csv'), index=False)
+
+# Print confirmation message
+print("\nData has been processed and saved to CSV files in the 'processed_data' folder.")
 
 # Print sample data
 print("\nUsers DataFrame:")
