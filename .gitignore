@@ -17,3 +17,7 @@ env/
 # Ignore logs and cache
 *.log
 *.cache
+
+# Ignore model files
+*.pkl
+*.joblib
