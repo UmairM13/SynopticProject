@@ -52,19 +52,20 @@ connection.commit()
 
 # Insert dummy data into users first to avoid foreign key constraint errors
 cursor.execute("""
-    INSERT INTO users (nationality, current_city, current_country, age, preferred_climate, past_destinations, budget, holiday_type, email, password, salt, session_token, trip_start_date, trip_end_date, created_at)
+    INSERT INTO users (nationality, current_city, current_country, age, preferred_climate, preferred_terrain, past_destinations, budget, holiday_type, email, password, salt, session_token, trip_start_date, trip_end_date, created_at)
     VALUES
-    ('British', 'London', 'UK', 30, 'Temperate', 'Bali, Tokyo', 2000.00, 'Relaxed', 'u1@gmail.com', 'password', 'salt', null, '2025-06-01', '2025-06-14', NOW()),
-    ('Australian', 'Sydney', 'Australia', 27, 'any', 'Paris, Cape Town', 1500.00, 'Adventurous', 'u2@gmail.com', 'password', 'salt', null, '2025-07-01', '2025-07-10', NOW()),
-    ('American', 'New York', 'USA', 35, 'Tropical', 'Paris, Bali', 3000.00, 'Relaxed', 'u3@gmail.com', 'password', 'salt', null, '2025-08-01', '2025-08-15', NOW()),
-    ('German', 'Berlin', 'Germany', 40, 'Polar', 'Tokyo, Bali', 2500.00, 'Adventurous', 'u4@gmail.com', 'password', 'salt', null, '2025-09-01', '2025-09-10', NOW()),
-    ('Canadian', 'Toronto', 'Canada', 28, 'Mediterranean', 'Rome, Sydney', 1800.00, 'Romantic', 'u5@gmail.com', 'password', 'salt', null, '2025-10-01', '2025-10-07', NOW()),
-    ('Japanese', 'Tokyo', 'Japan', 32, 'Polar', 'Moscow, London', 2200.00, 'Cultural', 'u6@gmail.com', 'password', 'salt', null, '2025-11-01', '2025-11-12', NOW()),
-    ('French', 'Paris', 'France', 26, 'Temperate', 'London, Rome', 2500.00, 'Shopping', 'u7@gmail.com', 'password', 'salt', null, '2025-12-01', '2025-12-05', NOW()),
-    ('Brazilian', 'Rio de Janeiro', 'Brazil', 29, 'Mediterranean', 'Barcelona, Lisbon', 1600.00, 'Cultural', 'u8@gmail.com', 'password', 'salt', null, '2025-01-01', '2025-01-10', NOW()),
-    ('South African', 'Cape Town', 'South Africa', 34, 'Desert', 'Cairo, Sydney', 2700.00, 'Luxury', 'u9@gmail.com', 'password', 'salt', null, '2025-02-01', '2025-02-07', NOW()),
-    ('Russian', 'Moscow', 'Russia', 31, 'Mediterranean', 'London, Bangkok', 2000.00, 'Party', 'u10@gmail.com', 'password', 'salt', null, '2025-03-01', '2025-03-05', NOW());
+    ('British', 'London', 'UK', 30, 'Temperate', 'Mountain', 'Bali, Tokyo', 2000.00, 'Relaxed', 'u1@gmail.com', 'password', 'salt', null, '2025-06-01', '2025-06-14', NOW()),
+    ('Australian', 'Sydney', 'Australia', 27, 'any', 'Beach', 'Paris, Cape Town', 1500.00, 'Adventurous', 'u2@gmail.com', 'password', 'salt', null, '2025-07-01', '2025-07-10', NOW()),
+    ('American', 'New York', 'USA', 35, 'Tropical', 'Urban', 'Paris, Bali', 3000.00, 'Relaxed', 'u3@gmail.com', 'password', 'salt', null, '2025-08-01', '2025-08-15', NOW()),
+    ('German', 'Berlin', 'Germany', 40, 'Polar', 'Forest', 'Tokyo, Bali', 2500.00, 'Adventurous', 'u4@gmail.com', 'password', 'salt', null, '2025-09-01', '2025-09-10', NOW()),
+    ('Canadian', 'Toronto', 'Canada', 28, 'Mediterranean', 'Lake', 'Rome, Sydney', 1800.00, 'Romantic', 'u5@gmail.com', 'password', 'salt', null, '2025-10-01', '2025-10-07', NOW()),
+    ('Japanese', 'Tokyo', 'Japan', 32, 'Polar', 'Mountain', 'Moscow, London', 2200.00, 'Cultural', 'u6@gmail.com', 'password', 'salt', null, '2025-11-01', '2025-11-12', NOW()),
+    ('French', 'Paris', 'France', 26, 'Temperate', 'Urban', 'London, Rome', 2500.00, 'Shopping', 'u7@gmail.com', 'password', 'salt', null, '2025-12-01', '2025-12-05', NOW()),
+    ('Brazilian', 'Rio de Janeiro', 'Brazil', 29, 'Mediterranean', 'Beach', 'Barcelona, Lisbon', 1600.00, 'Cultural', 'u8@gmail.com', 'password', 'salt', null, '2025-01-01', '2025-01-10', NOW()),
+    ('South African', 'Cape Town', 'South Africa', 34, 'Desert', 'Mountain', 'Cairo, Sydney', 2700.00, 'Luxury', 'u9@gmail.com', 'password', 'salt', null, '2025-02-01', '2025-02-07', NOW()),
+    ('Russian', 'Moscow', 'Russia', 31, 'Mediterranean', 'Forest', 'London, Bangkok', 2000.00, 'Party', 'u10@gmail.com', 'password', 'salt', null, '2025-03-01', '2025-03-05', NOW());
 """)
+
 
 
 # Commit users data first so that their IDs are available for reference in other tables

@@ -47,6 +47,7 @@ cursor.execute("""
         current_country VARCHAR(255),
         age INT,
         preferred_climate VARCHAR(100),
+        preferred_terrain VARCHAR(100),
         past_destinations TEXT,
         budget DECIMAL(10,2),
         holiday_type VARCHAR(100),
