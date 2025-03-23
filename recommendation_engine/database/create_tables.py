@@ -54,7 +54,7 @@ cursor.execute("""
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255),
         salt VARCHAR(255),
-        session_token VARCHAR(255) UNIQUE,
+        session_token VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 """)
