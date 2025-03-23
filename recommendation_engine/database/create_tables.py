@@ -47,9 +47,15 @@ cursor.execute("""
         current_country VARCHAR(255),
         age INT,
         preferred_destination VARCHAR(255),
+        preferred_climate VARCHAR(100),
         past_destinations TEXT,
         budget DECIMAL(10,2),
-        holiday_type VARCHAR(100)
+        holiday_type VARCHAR(100),
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        salt VARCHAR(255) NOT NULL,
+        session_token VARCHAR(255) UNIQUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 """)
 
