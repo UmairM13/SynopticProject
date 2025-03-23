@@ -2,6 +2,7 @@ import pymysql
 import os
 import pandas as pd
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -42,14 +43,34 @@ users_df = dfs["users"]
 destinations_df = dfs["destinations"]
 travel_costs_df = dfs["travel_costs"]
 
-# Handle missing values
+# Handle missing values for users
 users_df.fillna({
     "age": users_df["age"].mean(),
-    "preferred_destination": "Unknown",
+    "preferred_climate": "any",  # Handle 'any' climate
+    "preferred_terrain": "Unknown",  # Handle missing preferred_terrain
     "past_destinations": "Unknown",
-    "budget": users_df["budget"].mean()
+    "budget": users_df["budget"].mean(),
+    "trip_start_date": datetime.now().date(),  # Assign current date if missing
+    "trip_end_date": datetime.now().date()  # Assign current date if missing
 }, inplace=True)
 
+# Estimate daily budget by calculating the duration if dates are available
+def calculate_daily_budget(row):
+    if pd.isna(row["trip_start_date"]) or pd.isna(row["trip_end_date"]):
+        # If dates are missing, assume a default trip duration (7 days)
+        duration = 7
+    else:
+        trip_duration = (row["trip_end_date"] - row["trip_start_date"]).days
+        duration = trip_duration if trip_duration > 0 else 7  # Ensure positive duration
+
+    return row["budget"] / duration
+
+# Convert dates to datetime and calculate daily budget
+users_df["trip_start_date"] = pd.to_datetime(users_df["trip_start_date"])
+users_df["trip_end_date"] = pd.to_datetime(users_df["trip_end_date"])
+users_df["daily_budget"] = users_df.apply(calculate_daily_budget, axis=1)
+
+# Handle missing values for destinations
 destinations_df.fillna({
     "currency": "Unknown",
     "climate": "Unknown",
@@ -57,6 +78,7 @@ destinations_df.fillna({
     "language": "Unknown"
 }, inplace=True)
 
+# Handle missing values for travel costs
 travel_costs_df.fillna({
     "flight_cost": travel_costs_df["flight_cost"].mean(),
     "train_cost": travel_costs_df["train_cost"].mean(),

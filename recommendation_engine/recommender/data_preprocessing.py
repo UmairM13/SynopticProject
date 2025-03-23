@@ -20,7 +20,7 @@ destinations_df = pd.concat([destinations_df, encoded_df], axis=1)
 # Label Encoding for holiday_type
 label_encoder = LabelEncoder()
 if label_feature in users_df.columns:
-    users_df[label_feature].fillna("Unknown", inplace=True)
+    users_df[label_feature] = users_df[label_feature].fillna("Unknown")  # Avoid FutureWarning
     users_df["holiday_type_encoded"] = label_encoder.fit_transform(users_df[label_feature])
     users_df.drop(columns=[label_feature], inplace=True)
 
