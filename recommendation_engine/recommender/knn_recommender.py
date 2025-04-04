@@ -112,9 +112,9 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.6, weight
         knn_score = distances[0][np.where(indices[0] == idx)[0][0]]
         similarity_score = calculate_similarity(destination, user)
         final_score = (weight_kNN * knn_score) + (weight_similarity * similarity_score)
-        
-        # Retrieve country directly from destination
-        country_val = destination['country'] if 'country' in destination.index else "Unknown"
+
+        country_columns = [col for col in destination.index if col.startswith('country_')]
+        country_val = [col.split('_')[1] for col in country_columns if destination[col] == 1]
         
         recommendations.append({
             'name': destination['name'],
@@ -131,6 +131,6 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.6, weight
     return recommendations_df[['name', 'country', 'final_score', 'knn_score', 'similarity_score']]
 
 if __name__ == "__main__":
-    user_id = 7
+    user_id = 5
     recommendations = recommend_destinations(user_id)
     print(recommendations)
