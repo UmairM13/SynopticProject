@@ -1,34 +1,44 @@
-from flask import Blueprint, request, jsonify
-from models.database import db
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from models.database import SessionLocal
 from models.user_models import User
 
-user_blueprint = Blueprint('users', __name__)
 
-@user_blueprint.route('/users', methods=['POST'])
-def add_user():
-    data = request.get_json()
-    new_user = User(
-                    nationality=data['nationality'],
-                    current_city=data['current_city'],
-                    current_country=data['current_country'],
-                    age=data['age'],
-                    preferred_destination=data['preferred_destination'],
-                    past_destinations=data['past_destinations'],
-                    budget=data['budget'],
-                    holiday_type=data['holiday_type']
-                    )
-    
-    db.session.add(new_user)
-    db.session.commit()
-    
-    return jsonify({"message": "User added successfully", "user_id": new_user.id}), 201
+router = APIRouter()
 
 
+# Dependency to get the database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        
+@router.post("/users")
+def create_user(user_data: dict, db: Session = Depends(get_db)):
+    new_user = User(**user_data)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {
+        "id": new_user.id,
+        "nationality": new_user.nationality,
+        "current_city": new_user.current_city,
+        "current_country": new_user.current_country,
+        "age": new_user.age,
+        "preferred_destination": new_user.preferred_destination,
+        "past_destinations": new_user.past_destinations,
+        "budget": new_user.budget,
+        "holiday_type": new_user.holiday_type
+    }
 
-@user_blueprint.route('/users', methods=['GET'])
-def get_users():
-    users = User.query.all()
-    return jsonify([{
+@router.get("/users/{user_id}")
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
         "id": user.id,
         "nationality": user.nationality,
         "current_city": user.current_city,
@@ -38,4 +48,4 @@ def get_users():
         "past_destinations": user.past_destinations,
         "budget": user.budget,
         "holiday_type": user.holiday_type
-    } for user in users]), 200
+    }
