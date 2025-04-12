@@ -79,5 +79,4 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
         "trip_start_date": user.trip_start_date,
         "trip_end_date": user.trip_end_date,
         "email": user.email
-        # Not returning password and salt for security reasons
     }
