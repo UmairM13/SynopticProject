@@ -118,13 +118,13 @@ processed_data_dir = os.path.join(current_directory, 'processed_data')
 # Create the 'processed_data' folder if it doesn't exist
 os.makedirs(processed_data_dir, exist_ok=True)
 
-# Save the DataFrames to CSV files in the 'processed_data' folder
-users_df.to_csv(os.path.join(processed_data_dir, 'users.csv'), index=False)
-destinations_df.to_csv(os.path.join(processed_data_dir, 'destinations.csv'), index=False)
-travel_costs_df.to_csv(os.path.join(processed_data_dir, 'travel_costs.csv'), index=False)
+# # Save the DataFrames to CSV files in the 'processed_data' folder
+# users_df.to_csv(os.path.join(processed_data_dir, 'users.csv'), index=False)
+# destinations_df.to_csv(os.path.join(processed_data_dir, 'destinations.csv'), index=False)
+# travel_costs_df.to_csv(os.path.join(processed_data_dir, 'travel_costs.csv'), index=False)
 
-# Print confirmation message
-print("\nData has been processed and saved to CSV files in the 'processed_data' folder.")
+# # Print confirmation message
+# print("\nData has been processed and saved to CSV files in the 'processed_data' folder.")
 
 # Print sample data
 print("\nUsers DataFrame:")
