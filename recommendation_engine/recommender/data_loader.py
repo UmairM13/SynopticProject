@@ -2,16 +2,14 @@ import pandas as pd
 import pickle
 import os
 
-# Define paths
-DATA_DIR = os.path.join(os.path.dirname(__file__), "processed_data")
+def load_processed_data():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    save_dir = os.path.join(base_dir, "processed_data")
+    
+    destinations = pd.read_pickle(os.path.join(save_dir, "processed_destinations.pkl"))
+    users = pd.read_pickle(os.path.join(save_dir, "processed_users.pkl"))
+    
+    return destinations, users
 
-# Load processed data
-destinations_path = os.path.join(DATA_DIR, "processed_destinations.pkl")
-users_path = os.path.join(DATA_DIR, "processed_users.pkl")
-
-if os.path.exists(destinations_path) and os.path.exists(users_path):
-    destinations_df = pd.read_pickle(destinations_path)
-    users_df = pd.read_pickle(users_path)
-    print("Processed data successfully loaded!")
-else:
-    raise FileNotFoundError("Processed data files not found. Ensure preprocessing was completed.")
+# Make DataFrames available for direct import
+destinations_df, users_df = load_processed_data()
