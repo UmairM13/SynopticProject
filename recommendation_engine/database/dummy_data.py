@@ -26,10 +26,10 @@ cursor.execute("""
                INSERT INTO destinations (name, country, off_season_start, off_season_end, avg_daily_budget, currency, climate, terrain, language, safety_rating)
             VALUES
             ('Paris', 'France', 'November', 'February', 100.00, 'EUR', 'Temperate', 'City', 'French', 4.5),
-            ('Bali', 'Indonesia', 'May', 'October', 50.00, 'IDR', 'Tropical', 'Beach', 'Indonesian', 4.7),
-            ('Tokyo', 'Japan', 'December', 'February', 120.00, 'JPY', 'Temperate', 'Urban', 'Japanese', 4.3),
+            ('Bali', 'Indonesia', 'May', 'October', 50.00, 'IDR', 'Tropical, Coastal', 'Beach', 'Indonesian', 4.7),
+            ('Tokyo', 'Japan', 'December', 'February', 120.00, 'JPY', 'Temperate, Humid', 'Urban', 'Japanese', 4.3),
             ('Cape Town', 'South Africa', 'April', 'September', 80.00, 'ZAR', 'Mediterranean', 'Mountain', 'English', 4.8),
-            ('Victoria Falls', 'Zimbabwe', 'March', 'June', 60.00, 'USD', 'Tropical', 'River', 'English', 4.6),
+            ('Victoria Falls', 'Zimbabwe', 'March', 'June', 60.00, 'USD', 'Tropical, Humid', 'River', 'English', 4.6),
             ('New York', 'USA', 'January', 'March', 150.00, 'USD', 'Temperate', 'Urban', 'English', 4.7),
             ('Rome', 'Italy', 'November', 'February', 90.00, 'EUR', 'Mediterranean', 'City', 'Italian', 4.4),
             ('Santorini', 'Greece', 'October', 'April', 110.00, 'EUR', 'Mediterranean', 'Beach', 'Greek', 4.8),
@@ -44,7 +44,11 @@ cursor.execute("""
             ('London', 'UK', 'November', 'March', 130.00, 'GBP', 'Temperate', 'Urban', 'English', 4.7),
             ('Seoul', 'South Korea', 'December', 'February', 90.00, 'KRW', 'Temperate', 'Urban', 'Korean', 4.5),
             ('Madrid', 'Spain', 'October', 'February', 100.00, 'EUR', 'Mediterranean', 'City', 'Spanish', 4.6),
-            ('Toronto', 'Canada', 'December', 'March', 110.00, 'CAD', 'Polar', 'Urban', 'English', 4.4);
+            ('Toronto', 'Canada', 'December', 'March', 110.00, 'CAD', 'Polar', 'Urban', 'English', 4.4),
+            ('Norwegian Fjords', 'Norway', 'October', 'March', 150.00, 'NOK', 'Polar, Coastal', 'Mountain', 'Norwegian', 4.7),
+            ('Amazon Lodge', 'Brazil', 'April', 'November', 90.00, 'BRL', 'Tropical, Humid', 'Jungle', 'Portuguese', 4.2),
+            ('Sahara Camp', 'Morocco', 'June', 'August', 70.00, 'MAD', 'Desert, Arid', 'Desert', 'Arabic', 4.4),
+            ('Swiss Alps', 'Switzerland', 'June', 'September', 180.00, 'CHF', 'Alpine, Temperate', 'Mountain', 'German', 4.8);
     """)
 
 connection.commit()
