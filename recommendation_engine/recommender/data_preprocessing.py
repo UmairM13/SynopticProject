@@ -32,29 +32,20 @@ if label_feature in users_df.columns:
 # Add off-season preference feature
 current_month = datetime.now().month
 
-# Create off-season score for destinations
-def calculate_off_season_score(row):
-    # If off-season data is present
-    if pd.notna(row.get("off_season_start")) and pd.notna(row.get("off_season_end")):
-        start = int(row["off_season_start"])
-        end = int(row["off_season_end"])
-        
-        # Check if current month is in off-season period
-        if start <= end:
-            is_off_season = start <= current_month <= end
-        else:  # Handles cases where off-season spans year end (e.g., Nov-Feb)
-            is_off_season = current_month >= start or current_month <= end
-            
-        # Assign higher score for off-season destinations
-        return 1.0 if is_off_season else 0.5
-    return 0.5  # Default value if no off-season data
-
-destinations_df["off_season_score"] = destinations_df.apply(calculate_off_season_score, axis=1)
 
 # Normalize numerical features for better model performance
 numerical_features = ["avg_daily_budget", "flight_cost", "hotel_cost"]
-scaler = StandardScaler()
+existing_num_cols = [col for col in numerical_features if col in destinations_df.columns]
 
+# Fill with median instead of mean
+if existing_num_cols:
+    destinations_df[existing_num_cols] = destinations_df[existing_num_cols].fillna(
+        destinations_df[existing_num_cols].median()
+    )
+    scaler = StandardScaler()
+    destinations_df[existing_num_cols] = scaler.fit_transform(destinations_df[existing_num_cols])
+    
+    
 # Scale only if columns exist
 existing_num_cols = [col for col in numerical_features if col in destinations_df.columns]
 if existing_num_cols:
@@ -72,12 +63,10 @@ with open(os.path.join(save_dir, "preprocessors.pkl"), "wb") as f:
     pickle.dump({
         "one_hot": ohe,
         "holiday_encoder": holiday_encoder if label_feature in users_df.columns else None,
-        "scaler": scaler if existing_num_cols else None,
-        "current_month": current_month
+        "scaler": scaler if existing_num_cols else None
     }, f)
 
 destinations_df.to_pickle(os.path.join(save_dir, "processed_destinations.pkl"))
 users_df.to_pickle(os.path.join(save_dir, "processed_users.pkl"))
 
 print("Preprocessing complete. Processed data saved.")
-print(f"Current month: {current_month} - Off-season preferences applied to recommendations.")
