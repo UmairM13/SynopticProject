@@ -2,9 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
-import pickle
-import os
-from data_loader import load_processed_data
+from recommendation_engine.recommender.data_loader import load_processed_data
 
 def prepare_features(destinations_df):
     """Prepare features for content-based filtering."""
