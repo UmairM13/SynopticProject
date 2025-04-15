@@ -8,8 +8,8 @@ def prepare_collab_data():
     """Create user-item matrix from past destinations"""
     users_df, destinations_df = load_processed_data()
     
-    print("📦 Destinations columns:", destinations_df.columns.tolist())
-    print("📦 Users columns:", users_df.columns.tolist())
+    print("-- Destinations columns:", destinations_df.columns.tolist())
+    print("-- Users columns:", users_df.columns.tolist())
     # Clean name columns for case-insensitive matching
     destinations_df['name_clean'] = destinations_df['name'].str.strip().str.lower()
 
