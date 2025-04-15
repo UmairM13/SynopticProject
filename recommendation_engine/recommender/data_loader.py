@@ -1,5 +1,6 @@
 import pandas as pd
 import pickle
+import numpy as np
 import os
 
 def load_processed_data():
@@ -9,7 +10,13 @@ def load_processed_data():
     destinations = pd.read_pickle(os.path.join(save_dir, "processed_destinations.pkl"))
     users = pd.read_pickle(os.path.join(save_dir, "processed_users.pkl"))
     
-    return destinations, users
+    users = users.copy()
+    destinations = destinations.copy()
 
-# Make DataFrames available for direct import
-destinations_df, users_df = load_processed_data()
+    users_numeric = users.select_dtypes(include=[np.number]).columns
+    users[users_numeric] = users[users_numeric].fillna(0)
+
+    dest_numeric = destinations.select_dtypes(include=[np.number]).columns
+    destinations[dest_numeric] = destinations[dest_numeric].fillna(0)
+
+    return users, destinations

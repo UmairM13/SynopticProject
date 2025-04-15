@@ -5,6 +5,8 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer
 from data_collection import users_df, destinations_df  # Load cleaned data
 from datetime import datetime
+import re
+import ast
 
 # Define categorical features for encoding
 one_hot_features = ["country", "terrain", "language"]
@@ -26,6 +28,23 @@ encoded_df.columns = ohe.get_feature_names_out(one_hot_features)
 # Merge encoded features
 destinations_df = destinations_df.drop(columns=one_hot_features + ['climate'])
 destinations_df = pd.concat([destinations_df, climate_encoded, encoded_df], axis=1)
+
+print("Original past_destinations values:")
+print(users_df['past_destinations'].head(10))
+
+print(users_df['past_destinations'].head())
+print(type(users_df['past_destinations'].iloc[0]))
+
+def clean_past_destinations(x):
+    if isinstance(x, list):
+        return x  # already good
+    if pd.isna(x) or not isinstance(x, str):
+        return []
+    # Remove square brackets and extra spaces
+    x = x.strip().strip('[]')
+    return [item.strip() for item in x.split(',') if item.strip()]
+
+users_df['past_destinations'] = users_df['past_destinations'].apply(clean_past_destinations)
 
 # Label Encoding for holiday_type - using one-hot instead of label encoding for better recommendations
 if label_feature in users_df.columns:
@@ -60,6 +79,12 @@ if existing_num_cols:
     destinations_df[existing_num_cols] = scaler.fit_transform(
         destinations_df[existing_num_cols].fillna(0)
     )
+    
+
+# Before saving processed data
+print("Final columns in users_df:", users_df.columns.tolist())
+print("past_destinations present:", 'past_destinations' in users_df.columns)
+print("past_destinations sample:", users_df['past_destinations'].head())
 
 # Save processed data
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -76,5 +101,11 @@ with open(os.path.join(save_dir, "preprocessors.pkl"), "wb") as f:
 
 destinations_df.to_pickle(os.path.join(save_dir, "processed_destinations.pkl"))
 users_df.to_pickle(os.path.join(save_dir, "processed_users.pkl"))
+# Also save as CSV for better compatibility
+destinations_df.to_csv(os.path.join(save_dir, "processed_destinations.csv"), index=False)
+# Save users_df as CSV, but with past_destinations as string
+users_df_csv = users_df.copy()
+users_df_csv['past_destinations'] = users_df_csv['past_destinations'].apply(str)
+users_df_csv.to_csv(os.path.join(save_dir, "processed_users.csv"), index=False)
 
 print("Preprocessing complete. Processed data saved.")

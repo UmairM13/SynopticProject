@@ -3,6 +3,7 @@ import os
 import pandas as pd
 from dotenv import load_dotenv
 from datetime import datetime
+import ast
 
 # Load environment variables
 load_dotenv()
@@ -105,10 +106,10 @@ destinations_df.drop_duplicates(inplace=True)
 travel_costs_df.drop_duplicates(inplace=True)
 
 # Split past destinations into lists
-users_df["past_destinations"] = users_df["past_destinations"].apply(
-    lambda x: x.split(",") if isinstance(x, str) else []
+users_df['past_destinations'] = users_df['past_destinations'].fillna('')
+users_df['past_destinations'] = users_df['past_destinations'].apply(
+    lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) and x.strip() != '' else []
 )
-
 # Merge destinations with travel costs
 destinations_df = pd.merge(
     destinations_df,
