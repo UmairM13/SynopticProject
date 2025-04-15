@@ -2,13 +2,21 @@ import pandas as pd
 import os
 import pickle
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer
 from data_collection import users_df, destinations_df  # Load cleaned data
 from datetime import datetime
 
 # Define categorical features for encoding
-one_hot_features = ["country", "climate", "terrain", "language"]
+one_hot_features = ["country", "terrain", "language"]
 label_feature = "holiday_type"
+
+destinations_df['climate'] = destinations_df['climate'].str.split(',')
+
+mlb = MultiLabelBinarizer()
+climate_encoded = pd.DataFrame(
+    mlb.fit_transform(destinations_df['climate']),
+    columns=[f"climate_{c}" for c in mlb.classes_]
+)
 
 # One-Hot Encoding for categorical features
 ohe = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
@@ -16,8 +24,8 @@ encoded_df = pd.DataFrame(ohe.fit_transform(destinations_df[one_hot_features]))
 encoded_df.columns = ohe.get_feature_names_out(one_hot_features)
 
 # Merge encoded features
-destinations_df = destinations_df.drop(columns=one_hot_features)
-destinations_df = pd.concat([destinations_df, encoded_df], axis=1)
+destinations_df = destinations_df.drop(columns=one_hot_features + ['climate'])
+destinations_df = pd.concat([destinations_df, climate_encoded, encoded_df], axis=1)
 
 # Label Encoding for holiday_type - using one-hot instead of label encoding for better recommendations
 if label_feature in users_df.columns:
