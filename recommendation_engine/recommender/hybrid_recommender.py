@@ -5,6 +5,7 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 from data_loader import load_processed_data
 from datetime import datetime
+from content_based_model import prepare_features
 
 
 users_df, destinations_df = load_processed_data()
@@ -47,11 +48,53 @@ n_neighbors = 20
 knn = NearestNeighbors(n_neighbors=n_neighbors, metric='euclidean')
 knn.fit(features_scaled)
 
-def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.6, weight_similarity=0.4):
+
+def compute_past_similarity(destination_name, visited_names, features_df, similarity_matrix): 
+    
+    if not visited_names:
+        return 0.0
+    
+    if destination_name not in features_df['name'].values:
+        return 0.0
+    
+    target_id = features_df[features_df['name'] == destination_name].index[0]
+    idx = list(features_df.index).index(target_id)
+    
+    scores = []
+    for past in visited_names:
+        if past in features_df['name'].values:
+            past_id = features_df[features_df['name'] == past].index[0]
+            past_idx = list(features_df.index).index(past_id)
+            scores.append(similarity_matrix[idx][past_idx])
+            
+    
+    return np.mean(scores) if scores else 0.0
+
+
+def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.5, weight_similarity=0.3, weight_past=0.2):
     user = users_df[users_df['id'] == user_id]
     if user.empty:
         return "User ID not found in the database."
     
+    print("HEHREREHREHREHRHHERHERHERHHRh")
+    print(users_df.columns.tolist())
+    
+    features_df, similarity_matrix = prepare_features(destinations_df)
+    
+    # Get user's past destinations safely
+    past_destinations = user.iloc[0]['past_destinations'] if 'past_destinations' in user.columns else None
+
+    # If it's a list/array/Series, flatten it to a string
+    if isinstance(past_destinations, (list, np.ndarray, pd.Series)):
+        past_destinations = str(past_destinations[0]) if len(past_destinations) > 0 else ""
+
+    # Now safely split
+    if isinstance(past_destinations, str) and past_destinations.strip():
+        visited = [d.strip() for d in past_destinations.split(',') if d.strip()]
+    else:
+        visited = []
+        
+        
     # Initialize user vector with zeros based on features
     user_vector = pd.DataFrame(0, index=[0], columns=features.columns)
     # Set budget
@@ -138,12 +181,17 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.6, weight
         destination = destinations_df.iloc[idx]
         knn_score = distances[0][i]  # Use i directly since we're enumerating
         similarity_score = calculate_similarity(destination, user)
+        content_score = compute_past_similarity(destination['name'], visited, features_df, similarity_matrix)
         
         # Normalize scores for weighted calculation
         normalized_knn_score = 1 / (1 + knn_score)  # Transform distance to similarity (closer to 1 means more similar)
         normalized_similarity = similarity_score / 3.0  # Max similarity is 3 (climate, terrain, budget)
         
-        final_score = (weight_kNN * normalized_knn_score) + (weight_similarity * normalized_similarity)
+        final_score = (
+            weight_kNN * normalized_knn_score +
+            weight_similarity * normalized_similarity +
+            weight_past * content_score
+        )
         
         off_season_score = calculate_off_season_score(destination)
         
@@ -161,6 +209,7 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.6, weight
             'final_score': final_score,
             'knn_score': normalized_knn_score,
             'similarity_score': normalized_similarity,
+            'content_score': content_score,
             'off_season_score': off_season_score,
             'avg_daily_budget': destination['avg_daily_budget'],
             'is_off_season': "Yes" if off_season_score > 0.5 else "No"
@@ -243,7 +292,26 @@ def explain_recommendation(destination_name, user_id):
             else:
                 explanation.append(f"× Note: Off-season is {', '.join(off_season_months)}")
     
+    # Content-based similarity explanation 
+    features_df, similarity_matrix = prepare_features(destinations_df)
     
+    if 'past_destinations' in user.columns:
+        past_destinations = user.iloc[0]['past_destinations']
+        
+        if isinstance(past_destinations, (list, np.ndarray, pd.Series)):
+                past_destinations = str(past_destinations[0]) if len(past_destinations) > 0 else ""
+
+        if isinstance(past_destinations, str) and past_destinations.strip():
+                visited = [d.strip() for d in past_destinations.split(',') if d.strip()]
+        else:
+            visited = []
+    else:
+        visited = []  
+    
+    similar_to = [d for d in visited if d in features_df['name'].values and compute_past_similarity(destination_name, [d], features_df, similarity_matrix) > 0.6]    
+    if similar_to:
+        explanation.append(f"- Similar to your past destinations: {', '.join(similar_to)}")
+        
     return "\n".join(explanation)
 
 if __name__ == "__main__":
