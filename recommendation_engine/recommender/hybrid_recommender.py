@@ -7,7 +7,7 @@ from data_loader import load_processed_data
 from datetime import datetime
 
 
-destinations_df, users_df = load_processed_data()
+users_df, destinations_df = load_processed_data()
 # Check available columns
 print("Columns in destinations_df:", destinations_df.columns)
 
