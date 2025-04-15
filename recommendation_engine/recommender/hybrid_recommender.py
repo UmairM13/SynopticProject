@@ -10,14 +10,14 @@ from recommendation_engine.recommender.content_based_model import prepare_featur
 
 users_df, destinations_df = load_processed_data()
 # Check available columns
-print("Columns in destinations_df:", destinations_df.columns)
+# print("Columns in destinations_df:", destinations_df.columns)
 
 current_month = datetime.now().month
 
 
-print("\n=== Data Validation ===")
-print("Destination columns:", destinations_df.columns.tolist())
-print("NaN counts:", destinations_df.isna().sum().sum())
+# print("\n=== Data Validation ===")
+# print("Destination columns:", destinations_df.columns.tolist())
+# print("NaN counts:", destinations_df.isna().sum().sum())
 
 
 # Drop non-numeric columns for model training
@@ -40,7 +40,7 @@ for col in features.columns:
 scaler = StandardScaler()
 features_scaled = scaler.fit_transform(features)
 
-print("NaN values before KNN:", np.isnan(features_scaled).sum())
+# print("NaN values before KNN:", np.isnan(features_scaled).sum())
 features_scaled = np.nan_to_num(features_scaled, nan=0.0)
 
 # Fit the KNN model with increased neighbors (set to 20)
@@ -75,9 +75,6 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.5, weight
     user = users_df[users_df['id'] == user_id]
     if user.empty:
         return "User ID not found in the database."
-    
-    print("HEHREREHREHREHRHHERHERHERHHRh")
-    print(users_df.columns.tolist())
     
     features_df, similarity_matrix = prepare_features(destinations_df)
     
@@ -152,7 +149,8 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.5, weight
             user_budget = user['budget'].values[0]
         
         print(f"Comparing budgets: User's budget {user_budget}, Destination's budget {destination_budget}")
-        if abs(destination_budget - user_budget) < 50:
+        tolerance = user_budget * 0.1  # e.g. 10% leeway
+        if user_budget + tolerance >= destination_budget:
             similarity_score += 1
             print("Budget match!")
         
@@ -212,7 +210,8 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.5, weight
             'content_score': content_score,
             'off_season_score': off_season_score,
             'avg_daily_budget': destination['avg_daily_budget'],
-            'is_off_season': "Yes" if off_season_score > 0.5 else "No"
+            'is_off_season': "Yes" if off_season_score > 0.5 else "No",
+            'id': destination['id']
         })
     
     recommendations_df = pd.DataFrame(recommendations)
@@ -224,16 +223,18 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.5, weight
     # Return top n recommendations
     return recommendations_df.head(n_recommendations)
 
-def explain_recommendation(destination_name, user_id):
+def explain_recommendation(destination_id, user_id):
     """Provide explanation for a specific destination recommendation."""
     
     user = users_df[users_df['id'] == user_id]
-    destination = destinations_df[destinations_df['name'] == destination_name]
-    
-    if user.empty or destination.empty:
+    destination_row = destinations_df[destinations_df['id'] == destination_id]
+
+    if user.empty or destination_row.empty:
         return "User ID or destination not found."
-    
-    destination = destination.iloc[0]
+
+    # Extract the original (unscaled) destination data
+    destination = destination_row.iloc[0]
+    destination_name = destination['name']
     explanation = [f"Why {destination_name} is recommended:"]
     
     
@@ -262,14 +263,25 @@ def explain_recommendation(destination_name, user_id):
     
     # Check budget compatibility
     if 'budget' in user.columns and 'avg_daily_budget' in destination.index:
-        user_budget = float(user['budget'].values[0]) if isinstance(user['budget'].values[0], Decimal) else user['budget'].values[0]
-        destination_budget = float(destination['avg_daily_budget']) if isinstance(destination['avg_daily_budget'], Decimal) else destination['avg_daily_budget']
-        
-        if abs(destination_budget - user_budget) < 50:
-            explanation.append(f"- The average daily budget of {destination_name} is within your budget.")
+        user_budget_raw = user['daily_budget'].values[0] if 'daily_budget' in user.columns else user['budget'].values[0]
+        destination_budget_raw = destination.get('avg_daily_budget_original', destination['avg_daily_budget'])
+
+        # Normalize types
+        user_budget = float(user_budget_raw)
+        destination_budget = float(destination_budget_raw)
+
+        user_budget_display = round(user_budget, 2)
+        destination_budget_display = round(destination_budget, 2)
+
+        tolerance = user_budget * 0.1  # 10% leeway
+        if user_budget + tolerance >= destination_budget:
+            explanation.append(
+                f"- The average daily budget of {destination_name} (${destination_budget_display}) is within your budget (${user_budget_display})."
+            )
         else:
-            explanation.append(f"x Budget differs: {destination_name} has an average daily budget of {destination_budget}.")
-            
+            explanation.append(
+                f"x Budget differs: {destination_name} has an average daily budget of ${destination_budget_display}, while your budget is ${user_budget_display}."
+            )
             
     # Check off-season preference
     if 'off_season_start' in destination.index and 'off_season_end' in destination.index:
