@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, Date, DateTime
 from sqlalchemy.sql import func
-from models.database import Base
+from recommendation_engine.api.models.database import Base
 
 class User(Base):
     __tablename__ = "users"
