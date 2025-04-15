@@ -248,7 +248,7 @@ def explain_recommendation(destination_name, user_id):
 
 if __name__ == "__main__":
     # Test with users
-    user_id = 4
+    user_id = 6
     print(f"Generating recommendations for user {user_id}")
     recommendations = recommend_destinations(user_id)
     
