@@ -4,23 +4,23 @@ import uuid, hashlib, os
 
 def create_user(db: Session, user_data: dict):
     salt = uuid.uuid4().hex
-    hashed_pw = hashlib.sha256((user_data.password + salt).encode()).hexdigest()
+    hashed_pw = hashlib.sha256((user_data['password'] + salt).encode()).hexdigest()
     
     db_user = User(
-        email=user_data.email,
+        email=user_data['email'],
         password=hashed_pw,
         salt=salt,
-        nationality=user_data.nationality,
-        current_city=user_data.current_city,
-        current_country=user_data.current_country,
-        age=user_data.age,
-        preferred_climate=user_data.preferred_climate,
-        preferred_terrain=user_data.preferred_terrain,
-        past_destinations=user_data.past_destinations,
-        budget=user_data.budget,
-        holiday_type=user_data.holiday_type,
-        trip_start_date=user_data.trip_start_date,
-        trip_end_date=user_data.trip_end_date,
+        nationality=user_data['nationality'],
+        current_city=user_data['current_city'],
+        current_country=user_data['current_country'],
+        age=user_data['age'],
+        preferred_climate=user_data['preferred_climate'],
+        preferred_terrain=user_data['preferred_terrain'],
+        past_destinations=user_data['past_destinations'],
+        budget=user_data['budget'],
+        holiday_type=user_data['holiday_type'],
+        trip_start_date=user_data['trip_start_date'],
+        trip_end_date=user_data['trip_end_date'],
     )
     db.add(db_user)
     db.commit()
