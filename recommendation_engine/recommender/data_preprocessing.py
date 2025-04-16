@@ -36,7 +36,17 @@ def save_processed(users_df, destinations_df, preprocessors):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     save_dir = os.path.join(base_dir, "processed_data")
     os.makedirs(save_dir, exist_ok=True)
-
+    
+    # Clean up old files
+    for file in os.listdir(save_dir):
+        file_path = os.path.join(save_dir, file)
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print(f"Warning: Failed to delete {file_path} - {e}")
+            
+    # Save new files
     with open(os.path.join(save_dir, "preprocessors.pkl"), "wb") as f:
         pickle.dump(preprocessors, f)
 
@@ -49,6 +59,8 @@ def save_processed(users_df, destinations_df, preprocessors):
     destinations_df.to_csv(os.path.join(save_dir, "processed_destinations.csv"), index=False)
 
 def run_preprocessing():
+    global users_df, destinations_df
+    
     from recommendation_engine.recommender.data_collection import users_df, destinations_df
     from datetime import datetime
 
@@ -68,6 +80,12 @@ def run_preprocessing():
     }
 
     save_processed(users_df, destinations_df, preprocessors)
+    
+    # Reload fresh version after saving to disk
+    from recommendation_engine.recommender.data_loader import load_processed_data
+
+    users_df, destinations_df = load_processed_data()
+
 
     return {"status": "success", "message": "Preprocessing completed and saved."}
 
