@@ -30,6 +30,9 @@ def create_user(db: Session, user_data: dict):
 def get_user(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()
 
+def get_user_by_token(db: Session, token: str):
+    return db.query(User).filter(User.session_token == token).first()
+
 def authenticate_user(db: Session, email: str, password: str):
     user = db.query(User).filter(User.email == email).first()
     if not user:
@@ -50,3 +53,24 @@ def logout_user(db: Session, user_id: int):
         db.commit()
         return True
     return False
+
+def update_user(db: Session, user_id: int, updates: dict):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return None
+
+    for field, value in updates.items():
+        if hasattr(user, field):
+            setattr(user, field, value)
+
+    db.commit()
+    db.refresh(user)
+    return user
+
+def delete_user(db: Session, user_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise ValueError("User not found")
+    
+    db.delete(user)
+    db.commit()

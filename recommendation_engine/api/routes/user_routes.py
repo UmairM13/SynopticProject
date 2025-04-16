@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from recommendation_engine.api.models.database import SessionLocal
 from recommendation_engine.api.models.user_models import User
 from recommendation_engine.api.controllers import user_controllers as user_service
+from recommendation_engine.api.utils.auth import require_authentication
+
 
 router = APIRouter()
 
@@ -28,6 +30,36 @@ async def create_user(request: Request, db: Session = Depends(get_db)):
         "email": db_user.email,
         "message": "User created successfully"
     }
+
+
+@router.get("/me")
+def get_current_user(db: Session = Depends(get_db),
+                     X_Authorization: str = Header(None)):
+    
+    if not X_Authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+    
+    user = user_service.get_user_by_token(db, X_Authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid session token")
+    
+    return {
+        "id": user.id,
+        "email": user.email,
+        "nationality": user.nationality,
+        "current_city": user.current_city,
+        "current_country": user.current_country,
+        "age": user.age,
+        "preferred_climate": user.preferred_climate,
+        "preferred_terrain": user.preferred_terrain,
+        "past_destinations": user.past_destinations,
+        "budget": user.budget,
+        "holiday_type": user.holiday_type,
+        "trip_start_date": user.trip_start_date,
+        "trip_end_date": user.trip_end_date,
+        "created_at": user.created_at
+    }
+
 
 @router.get("/{user_id}")
 def get_user(user_id: int, db: Session = Depends(get_db)):
@@ -76,3 +108,41 @@ async def logout(db: Session = Depends(get_db),
     
     user_service.logout_user(db, user.id)
     return {"message": "Logout successful"}
+
+
+@router.patch("/{user_id}")
+async def update_user(
+    user_id: int, 
+    request:Request, 
+    db: Session = Depends(get_db),
+    X_Authorization: str = Header(None)
+    ):
+    
+    if not X_Authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+    
+    user_from_token = user_service.get_user_by_token(db, X_Authorization)
+    if not user_from_token:
+        raise HTTPException(status_code=401, detail="Invalid session token")
+    
+    data = await request.json()
+    
+    user = user_service.update_user(db, user_id, data)
+    
+    return {
+        "id": user.id,
+        "email": user.email,
+        "message": "User updated successfully"
+    }
+    
+
+@router.delete("/")
+def delete_user(
+    current_user: User = Depends(require_authentication()),
+    db: Session = Depends(get_db)):
+    
+    user_service.delete_user(db, current_user.id)
+    return {"message": "User deleted successfully"}
+
+
+    
