@@ -6,6 +6,8 @@ from recommendation_engine.api.routes.recommendations_routes import router as re
 
 app = FastAPI()
 
+Base.metadata.create_all(bind=engine)
+
 app.include_router(user_router, prefix="/travel/api/users")
 app.include_router(recommendations, prefix="/travel/api/recommendations", tags=["Recommendations"])
 
