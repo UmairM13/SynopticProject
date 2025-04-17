@@ -1,19 +1,20 @@
-from .database import db
+from sqlalchemy import Column, Float, Integer, String
+from recommendation_engine.api.models.database import Base
 
-class Destination(db.Model):
+class Destination(Base):
     __tablename__ = 'destinations'
     
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255))
-    country = db.Column(db.String(255))
-    off_season_start = db.Column(db.String(255))
-    off_season_end = db.Column(db.String(255))
-    avg_daily_budget = db.Column(db.Float)
-    currency = db.Column(db.String(255))
-    climate = db.Column(db.String(255))
-    terrain = db.Column(db.String(255))
-    language = db.Column(db.String(255))
-    safety_rating = db.Column(db.Integer)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    country = Column(String(255))
+    off_season_start = Column(String(255))
+    off_season_end = Column(String(255))
+    avg_daily_budget = Column(Float)
+    currency = Column(String(255))
+    climate = Column(String(255))
+    terrain = Column(String(255))
+    language = Column(String(255))
+    safety_rating = Column(Integer)
     
     def __init__(self, name, country, off_season_start, off_season_end, avg_daily_budget, currency, climate, terrain, language, safety_rating):
         self.name = name
