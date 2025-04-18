@@ -2,14 +2,16 @@ from fastapi import FastAPI
 from recommendation_engine.api.models.database import Base, engine
 from recommendation_engine.api.routes.user_routes import router as user_router
 from recommendation_engine.api.routes.recommendations_routes import router as recommendations
+from recommendation_engine.api.routes.analytics_routes import router as analytics
 
 
 app = FastAPI()
 
 Base.metadata.create_all(bind=engine)
 
-app.include_router(user_router, prefix="/travel/api/users")
+app.include_router(user_router, prefix="/travel/api/users", tags=["Users"])
 app.include_router(recommendations, prefix="/travel/api/recommendations", tags=["Recommendations"])
+app.include_router(analytics, prefix="/travel/api/analytics", tags=["Analytics"])
 
 
 @app.get("/travel/api/")
