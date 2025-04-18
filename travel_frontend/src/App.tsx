@@ -7,7 +7,9 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { useEffect, useRef } from "react";
-import Login from "./screens/login";
+import Login from "./pages/login";
+import Register from "./pages/Register";
+import Preferences from "./pages/Prefernces";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -17,6 +19,8 @@ function App() {
       <InactivityLogout />
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/preferences" element={<Preferences />} />
       </Routes>
     </Router>
   );
