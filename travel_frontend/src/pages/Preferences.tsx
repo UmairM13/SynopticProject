@@ -28,11 +28,20 @@ const Preferences = () => {
 
   const handleSelect = (label: string) => {
     // Toggle logic
-    setSelectedTerrains((prev) =>
-      prev.includes(label)
-        ? prev.filter((item) => item !== label)
-        : [...prev, label]
-    );
+    setSelectedTerrains((prev) => {
+      // If selecting "Any", deselect everything else
+      if (label === "Any") {
+        return ["Any"];
+      }
+
+      // If "Any" is already selected and another is clicked, remove "Any"
+      const filtered = prev.includes("Any") ? [] : [...prev];
+
+      // Toggle the clicked label
+      return filtered.includes(label)
+        ? filtered.filter((item) => item !== label)
+        : [...filtered, label];
+    });
   };
 
   const handleSubmit = () => {
