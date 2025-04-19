@@ -9,7 +9,8 @@ import {
 import { useEffect, useRef } from "react";
 import Login from "./pages/login";
 import Register from "./pages/Register";
-import Preferences from "./pages/Prefernces";
+import Preferences from "./pages/Preferences";
+import ClimatePreferences from "./pages/ClimatePreference";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -21,6 +22,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/preferences" element={<Preferences />} />
+        <Route path="/climate-preference" element={<ClimatePreferences />} />
       </Routes>
     </Router>
   );
