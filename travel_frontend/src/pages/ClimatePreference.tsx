@@ -51,7 +51,7 @@ const ClimatePreferences = () => {
 
   return (
     <Container className="mt-5">
-      <h2 className="mb-4 text-center">Select Your Preferred Terrain</h2>
+      <h2 className="mb-4 text-center">Select Your Preferred Climate</h2>
       <Row className="g-3">
         {climateOptions.map((option, index) => (
           <Col key={index} md={4} className="mb-3">
