@@ -1,74 +1,55 @@
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import "./App.css";
 import {
   BrowserRouter as Router,
   Route,
   Routes,
-  useNavigate,
+  Navigate,
 } from "react-router-dom";
-import { useEffect, useRef } from "react";
+
 import Login from "./pages/login";
 import Register from "./pages/Register";
-import Preferences from "./pages/TerrainPreferences";
-import ClimatePreferences from "./pages/ClimatePreference";
-import HolidayPreferences from "./pages/HolidayPreferences";
+import OnboardingFlow from "./pages/onboarding/OnboardingFlow";
+
+function InactivityLogout() {
+  const navigate = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const resetTimer = () => {
+      if (navigate.current) clearTimeout(navigate.current);
+      navigate.current = setTimeout(() => {
+        localStorage.removeItem("session_token");
+        window.location.href = "/login";
+      }, 30 * 60 * 1000); // 30 mins
+    };
+
+    const events = ["mousemove", "keydown", "click", "scroll"];
+    events.forEach((event) => window.addEventListener(event, resetTimer));
+    resetTimer();
+
+    return () => {
+      if (navigate.current) clearTimeout(navigate.current);
+      events.forEach((event) => window.removeEventListener(event, resetTimer));
+    };
+  }, []);
+
+  return null;
+}
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <Router>
       <InactivityLogout />
       <Routes>
+        <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/terrain-preferences" element={<Preferences />} />
-        <Route path="/climate-preferences" element={<ClimatePreferences />} />
-        <Route path="/holiday-preferences" element={<HolidayPreferences />} />
+        <Route path="/onboarding" element={<OnboardingFlow />} />
+        {/* If needed, fallback route */}
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
   );
 }
-
-const InactivityLogout = () => {
-  const navigate = useNavigate();
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  const startTimer = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-
-    // Set timer to log out user after 5 minutes (300000 milliseconds) of inactivity
-    timerRef.current = setTimeout(() => {
-      console.log("User inactive for 5 minutes. Redirecting to login.");
-      navigate("/login"); // Redirect to login after inactivity
-    }, 300000);
-  };
-
-  const resetTimer = () => {
-    console.log("User activity detected. Resetting timer.");
-    startTimer();
-  };
-
-  useEffect(() => {
-    // Adding event listeners to reset timer
-    window.addEventListener("mousemove", resetTimer);
-    window.addEventListener("keypress", resetTimer);
-    window.addEventListener("click", resetTimer);
-
-    startTimer(); // Start the inactivity timer when the component mounts
-
-    return () => {
-      // Cleanup function to clear timer and remove event listeners
-      clearTimeout(timerRef.current!);
-      window.removeEventListener("mousemove", resetTimer);
-      window.removeEventListener("keypress", resetTimer);
-      window.removeEventListener("click", resetTimer);
-    };
-  }, [navigate]);
-
-  return null; // This component does not render anything
-};
 
 export default App;
