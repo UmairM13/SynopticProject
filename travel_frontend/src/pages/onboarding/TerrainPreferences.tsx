@@ -1,15 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Container, Row, Col, Button } from "react-bootstrap";
-import SelectableCard from "../components/SelectableCard";
-import mountainImg from "../assets/images/mountain.jpg";
-import desertImg from "../assets/images/desert.jpg";
-import jungleImg from "../assets/images/jungle.jpg";
-import beachImg from "../assets/images/beach.jpg";
-import urbanImg from "../assets/images/urban.jpg";
-import riverImg from "../assets/images/river.jpg";
-import coastalImg from "../assets/images/coastal.jpg";
-import valleyImg from "../assets/images/valley.jpg";
-import anyImg from "../assets/images/any.jpg";
+import SelectableCard from "../../components/SelectableCard";
+import mountainImg from "../../assets/images/mountain.jpg";
+import desertImg from "../../assets/images/desert.jpg";
+import jungleImg from "../../assets/images/jungle.jpg";
+import beachImg from "../../assets/images/beach.jpg";
+import urbanImg from "../../assets/images/urban.jpg";
+import riverImg from "../../assets/images/river.jpg";
+import coastalImg from "../../assets/images/coastal.jpg";
+import valleyImg from "../../assets/images/valley.jpg";
+import anyImg from "../../assets/images/any.jpg";
+
+interface TerrainPreferencesProps {
+  selected: string[];
+  onContinue: (selected: string[]) => void;
+}
 
 const terrainOptions = [
   { label: "Mountain", image: mountainImg },
@@ -23,21 +28,20 @@ const terrainOptions = [
   { label: "Any", image: anyImg },
 ];
 
-const Preferences = () => {
-  const [selectedTerrains, setSelectedTerrains] = useState<string[]>([]);
+const TerrainPreferences = ({
+  selected,
+  onContinue,
+}: TerrainPreferencesProps) => {
+  const [selectedTerrains, setSelectedTerrains] = useState<string[]>(selected);
+
+  useEffect(() => {
+    setSelectedTerrains(selected);
+  }, [selected]);
 
   const handleSelect = (label: string) => {
-    // Toggle logic
     setSelectedTerrains((prev) => {
-      // If selecting "Any", deselect everything else
-      if (label === "Any") {
-        return ["Any"];
-      }
-
-      // If "Any" is already selected and another is clicked, remove "Any"
+      if (label === "Any") return ["Any"];
       const filtered = prev.includes("Any") ? [] : [...prev];
-
-      // Toggle the clicked label
       return filtered.includes(label)
         ? filtered.filter((item) => item !== label)
         : [...filtered, label];
@@ -45,8 +49,7 @@ const Preferences = () => {
   };
 
   const handleSubmit = () => {
-    console.log("Selected Terrains:", selectedTerrains);
-    // TODO: Handle backend submission here
+    onContinue(selectedTerrains);
   };
 
   return (
@@ -78,4 +81,4 @@ const Preferences = () => {
   );
 };
 
-export default Preferences;
+export default TerrainPreferences;
