@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from recommendation_engine.api.models.database import Base, engine
 from recommendation_engine.api.routes.user_routes import router as user_router
 from recommendation_engine.api.routes.recommendations_routes import router as recommendations
@@ -7,6 +8,19 @@ from recommendation_engine.api.routes.destination_routes import router as destin
 
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:5173",  # Vite frontend
+    "http://127.0.0.1:5173"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Can be ["*"] for testing
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods like GET, POST, etc.
+    allow_headers=["*"],  # Allow all headers including X-Authorization
+)
 
 Base.metadata.create_all(bind=engine)
 
