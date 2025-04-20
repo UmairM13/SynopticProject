@@ -10,6 +10,7 @@ import {
 import Login from "./pages/login";
 import Register from "./pages/Register";
 import OnboardingFlow from "./pages/onboarding/OnboardingFlow";
+import RecommendationPage from "./pages/RecommendationPage";
 
 function InactivityLogout() {
   const navigate = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,6 +46,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/onboarding" element={<OnboardingFlow />} />
+        <Route path="/recommendations" element={<RecommendationPage />} />
         {/* If needed, fallback route */}
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
