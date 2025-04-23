@@ -23,51 +23,57 @@ cursor = connection.cursor()
 
 # Insert dummy data into destinations
 cursor.execute("""
-               INSERT INTO destinations (name, country, off_season_start, off_season_end, avg_daily_budget, currency, climate, terrain, language, safety_rating)
-            VALUES
-            ('Paris', 'France', 'November', 'February', 100.00, 'EUR', 'Temperate', 'City', 'French', 4.5),
-            ('Bali', 'Indonesia', 'May', 'October', 50.00, 'IDR', 'Tropical, Coastal', 'Beach', 'Indonesian', 4.7),
-            ('Tokyo', 'Japan', 'December', 'February', 120.00, 'JPY', 'Temperate, Humid', 'Urban', 'Japanese', 4.3),
-            ('Cape Town', 'South Africa', 'April', 'September', 80.00, 'ZAR', 'Mediterranean', 'Mountain', 'English', 4.8),
-            ('Victoria Falls', 'Zimbabwe', 'March', 'June', 60.00, 'USD', 'Tropical, Humid', 'River', 'English', 4.6),
-            ('New York', 'USA', 'January', 'March', 150.00, 'USD', 'Temperate', 'Urban', 'English', 4.7),
-            ('Rome', 'Italy', 'November', 'February', 90.00, 'EUR', 'Mediterranean', 'City', 'Italian', 4.4),
-            ('Santorini', 'Greece', 'October', 'April', 110.00, 'EUR', 'Mediterranean', 'Beach', 'Greek', 4.8),
-            ('Sydney', 'Australia', 'May', 'August', 130.00, 'AUD', 'Temperate', 'City', 'English', 4.7),
-            ('Reykjavik', 'Iceland', 'October', 'March', 140.00, 'ISK', 'Polar', 'Urban', 'Icelandic', 4.5),
-            ('Dubai', 'UAE', 'May', 'September', 200.00, 'AED', 'Desert', 'Urban', 'Arabic', 4.6),
-            ('Bangkok', 'Thailand', 'June', 'October', 70.00, 'THB', 'Tropical', 'City', 'Thai', 4.3),
-            ('Moscow', 'Russia', 'November', 'March', 75.00, 'RUB', 'Polar', 'Urban', 'Russian', 4.2),
-            ('Rio de Janeiro', 'Brazil', 'April', 'September', 80.00, 'BRL', 'Sub-Tropical', 'Beach', 'Portuguese', 4.5),
-            ('Los Angeles', 'USA', 'January', 'April', 140.00, 'USD', 'Mediterranean', 'Urban', 'English', 4.6),
-            ('Cairo', 'Egypt', 'June', 'September', 60.00, 'EGP', 'Desert', 'City', 'Arabic', 4.1),
-            ('London', 'UK', 'November', 'March', 130.00, 'GBP', 'Temperate', 'Urban', 'English', 4.7),
-            ('Seoul', 'South Korea', 'December', 'February', 90.00, 'KRW', 'Temperate', 'Urban', 'Korean', 4.5),
-            ('Madrid', 'Spain', 'October', 'February', 100.00, 'EUR', 'Mediterranean', 'City', 'Spanish', 4.6),
-            ('Toronto', 'Canada', 'December', 'March', 110.00, 'CAD', 'Polar', 'Urban', 'English', 4.4),
-            ('Norwegian Fjords', 'Norway', 'October', 'March', 150.00, 'NOK', 'Polar, Coastal', 'Mountain', 'Norwegian', 4.7),
-            ('Amazon Lodge', 'Brazil', 'April', 'November', 90.00, 'BRL', 'Tropical, Humid', 'Jungle', 'Portuguese', 4.2),
-            ('Sahara Camp', 'Morocco', 'June', 'August', 70.00, 'MAD', 'Desert, Arid', 'Desert', 'Arabic', 4.4),
-            ('Swiss Alps', 'Switzerland', 'June', 'September', 180.00, 'CHF', 'Alpine, Temperate', 'Mountain', 'German', 4.8);
-    """)
+    INSERT INTO destinations (
+        name, country, off_season_start, off_season_end, avg_daily_budget, currency,
+        climate, terrain, language, safety_rating, holiday_type
+    ) VALUES
+    ('Paris', 'France', 'November', 'February', 100.00, 'EUR', 'Temperate', 'City', 'French', 4.5, 'romantic'),
+    ('Bali', 'Indonesia', 'May', 'October', 50.00, 'IDR', 'Tropical, Coastal', 'Beach', 'Indonesian', 4.7, 'relaxed,romantic'),
+    ('Tokyo', 'Japan', 'December', 'February', 120.00, 'JPY', 'Temperate, Humid', 'Urban', 'Japanese', 4.3, 'solo,cultural'),
+    ('Cape Town', 'South Africa', 'April', 'September', 80.00, 'ZAR', 'Mediterranean', 'Mountain', 'English', 4.8, 'adventure'),
+    ('Victoria Falls', 'Zimbabwe', 'March', 'June', 60.00, 'USD', 'Tropical, Humid', 'River', 'English', 4.6, 'adventure,nature'),
+    ('New York', 'USA', 'January', 'March', 150.00, 'USD', 'Temperate', 'Urban', 'English', 4.7, 'shopping,solo'),
+    ('Rome', 'Italy', 'November', 'February', 90.00, 'EUR', 'Mediterranean', 'City', 'Italian', 4.4, 'cultural,romantic'),
+    ('Santorini', 'Greece', 'October', 'April', 110.00, 'EUR', 'Mediterranean', 'Beach', 'Greek', 4.8, 'romantic'),
+    ('Sydney', 'Australia', 'May', 'August', 130.00, 'AUD', 'Temperate', 'City', 'English', 4.7, 'family,adventure'),
+    ('Reykjavik', 'Iceland', 'October', 'March', 140.00, 'ISK', 'Polar', 'Urban', 'Icelandic', 4.5, 'nature,adventure'),
+    ('Dubai', 'UAE', 'May', 'September', 200.00, 'AED', 'Desert', 'Urban', 'Arabic', 4.6, 'luxury,shopping'),
+    ('Bangkok', 'Thailand', 'June', 'October', 70.00, 'THB', 'Tropical', 'City', 'Thai', 4.3, 'cultural,party'),
+    ('Moscow', 'Russia', 'November', 'March', 75.00, 'RUB', 'Polar', 'Urban', 'Russian', 4.2, 'cultural'),
+    ('Rio de Janeiro', 'Brazil', 'April', 'September', 80.00, 'BRL', 'Sub-Tropical', 'Beach', 'Portuguese', 4.5, 'party,adventure'),
+    ('Los Angeles', 'USA', 'January', 'April', 140.00, 'USD', 'Mediterranean', 'Urban', 'English', 4.6, 'relaxed,shopping'),
+    ('Cairo', 'Egypt', 'June', 'September', 60.00, 'EGP', 'Desert', 'City', 'Arabic', 4.1, 'cultural,adventure'),
+    ('London', 'UK', 'November', 'March', 130.00, 'GBP', 'Temperate', 'Urban', 'English', 4.7, 'cultural,solo'),
+    ('Seoul', 'South Korea', 'December', 'February', 90.00, 'KRW', 'Temperate', 'Urban', 'Korean', 4.5, 'tech,cultural'),
+    ('Madrid', 'Spain', 'October', 'February', 100.00, 'EUR', 'Mediterranean', 'City', 'Spanish', 4.6, 'cultural'),
+    ('Toronto', 'Canada', 'December', 'March', 110.00, 'CAD', 'Polar', 'Urban', 'English', 4.4, 'family'),
+    ('Norwegian Fjords', 'Norway', 'October', 'March', 150.00, 'NOK', 'Polar, Coastal', 'Mountain', 'Norwegian', 4.7, 'nature,cruise'),
+    ('Amazon Lodge', 'Brazil', 'April', 'November', 90.00, 'BRL', 'Tropical, Humid', 'Jungle', 'Portuguese', 4.2, 'adventure,nature'),
+    ('Sahara Camp', 'Morocco', 'June', 'August', 70.00, 'MAD', 'Desert, Arid', 'Desert', 'Arabic', 4.4, 'adventure'),
+    ('Swiss Alps', 'Switzerland', 'June', 'September', 180.00, 'CHF', 'Alpine, Temperate', 'Mountain', 'German', 4.8, 'skiing,luxury');
+""")
 
 connection.commit()
 
 
 # Insert dummy data into users first to avoid foreign key constraint errors
 cursor.execute("""
-    INSERT INTO users (nationality, current_city, current_country, age, preferred_climate, preferred_terrain, past_destinations, budget, holiday_type, email, password, salt, session_token, trip_start_date, trip_end_date, created_at)
-    VALUES
-    ('British', 'London', 'UK', 30, 'Temperate', 'Mountain', 'Bali, Tokyo', 2000.00, 'Relaxed', 'u1@gmail.com', 'password', 'salt', null, '2025-06-01', '2025-06-14', NOW()),
-    ('Australian', 'Sydney', 'Australia', 27, 'any', 'Beach', 'Paris, Cape Town', 1500.00, 'Adventurous', 'u2@gmail.com', 'password', 'salt', null, '2025-07-01', '2025-07-10', NOW()),
-    ('American', 'New York', 'USA', 35, 'Tropical', 'Urban', 'Paris, Bali', 3000.00, 'Relaxed', 'u3@gmail.com', 'password', 'salt', null, '2025-08-01', '2025-08-15', NOW()),
-    ('German', 'Berlin', 'Germany', 40, 'Polar', 'Forest', 'Tokyo, Bali', 2500.00, 'Adventurous', 'u4@gmail.com', 'password', 'salt', null, '2025-09-01', '2025-09-10', NOW()),
-    ('Canadian', 'Toronto', 'Canada', 28, 'Mediterranean', 'Lake', 'Rome, Sydney', 1800.00, 'Romantic', 'u5@gmail.com', 'password', 'salt', null, '2025-10-01', '2025-10-07', NOW()),
-    ('Japanese', 'Tokyo', 'Japan', 32, 'Polar', 'Mountain', 'Moscow, London', 2200.00, 'Cultural', 'u6@gmail.com', 'password', 'salt', null, '2025-11-01', '2025-11-12', NOW()),
-    ('French', 'Paris', 'France', 26, 'Temperate', 'Urban', 'London, Rome', 2500.00, 'Shopping', 'u7@gmail.com', 'password', 'salt', null, '2025-12-01', '2025-12-05', NOW()),
-    ('Brazilian', 'Rio de Janeiro', 'Brazil', 29, 'Mediterranean', 'Beach', 'Barcelona, Lisbon', 1600.00, 'Cultural', 'u8@gmail.com', 'password', 'salt', null, '2025-01-01', '2025-01-10', NOW()),
-    ('South African', 'Cape Town', 'South Africa', 34, 'Desert', 'Mountain', 'Cairo, Sydney', 2700.00, 'Luxury', 'u9@gmail.com', 'password', 'salt', null, '2025-02-01', '2025-02-07', NOW()),
-    ('Russian', 'Moscow', 'Russia', 31, 'Mediterranean', 'Forest', 'London, Bangkok', 2000.00, 'Party', 'u10@gmail.com', 'password', 'salt', null, '2025-03-01', '2025-03-05', NOW());
+    INSERT INTO users (
+        nationality, current_city, current_country, age,
+        preferred_climate, preferred_terrain, past_destinations, budget,
+        holiday_type, email, password, salt, session_token,
+        trip_start_date, trip_end_date, created_at
+    ) VALUES
+    ('British', 'London', 'UK', 30, 'Temperate, Mediterranean', 'Mountain, Coastal', 'Bali, Tokyo', 2000.00, 'Relaxed, Cultural', 'u1@gmail.com', 'password', 'salt', null, '2025-06-01', '2025-06-14', NOW()),
+    ('Australian', 'Sydney', 'Australia', 27, 'Any', 'Beach, Jungle', 'Paris, Cape Town', 1500.00, 'Adventurous, Romantic', 'u2@gmail.com', 'password', 'salt', null, '2025-07-01', '2025-07-10', NOW()),
+    ('American', 'New York', 'USA', 35, 'Tropical, Temperate', 'Urban, Beach', 'Paris, Bali', 3000.00, 'Relaxed, Shopping', 'u3@gmail.com', 'password', 'salt', null, '2025-08-01', '2025-08-15', NOW()),
+    ('German', 'Berlin', 'Germany', 40, 'Polar, Alpine', 'Forest, Mountain', 'Tokyo, Bali', 2500.00, 'Adventurous, Cultural', 'u4@gmail.com', 'password', 'salt', null, '2025-09-01', '2025-09-10', NOW()),
+    ('Canadian', 'Toronto', 'Canada', 28, 'Mediterranean, Temperate', 'Lake, Urban', 'Rome, Sydney', 1800.00, 'Romantic, Relaxed', 'u5@gmail.com', 'password', 'salt', null, '2025-10-01', '2025-10-07', NOW()),
+    ('Japanese', 'Tokyo', 'Japan', 32, 'Polar, Temperate', 'Mountain, Urban', 'Moscow, London', 2200.00, 'Cultural, Solo', 'u6@gmail.com', 'password', 'salt', null, '2025-11-01', '2025-11-12', NOW()),
+    ('French', 'Paris', 'France', 26, 'Temperate, Humid', 'Urban, Beach', 'London, Rome', 2500.00, 'Shopping, Romantic', 'u7@gmail.com', 'password', 'salt', null, '2025-12-01', '2025-12-05', NOW()),
+    ('Brazilian', 'Rio de Janeiro', 'Brazil', 29, 'Mediterranean, Tropical', 'Beach, Urban', 'Barcelona, Lisbon', 1600.00, 'Cultural, Party', 'u8@gmail.com', 'password', 'salt', null, '2025-01-01', '2025-01-10', NOW()),
+    ('South African', 'Cape Town', 'South Africa', 34, 'Desert, Temperate', 'Mountain, Coastal', 'Cairo, Sydney', 2700.00, 'Luxury, Adventure', 'u9@gmail.com', 'password', 'salt', null, '2025-02-01', '2025-02-07', NOW()),
+    ('Russian', 'Moscow', 'Russia', 31, 'Mediterranean, Polar', 'Forest, Urban', 'London, Bangkok', 2000.00, 'Party, Cultural', 'u10@gmail.com', 'password', 'salt', null, '2025-03-01', '2025-03-05', NOW());
 """)
 
 

@@ -34,7 +34,8 @@ cursor.execute("""
         climate VARCHAR(100),
         terrain VARCHAR(100),
         language VARCHAR(100),
-        safety_rating DECIMAL(3,2)
+        safety_rating DECIMAL(3,2),
+        holiday_type VARCHAR(100)
     );
 """)
 
