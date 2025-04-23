@@ -5,11 +5,12 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer
 
 # Dynamically load data
-# from recommendation_engine.recommender.data_collection import users_df, destinations_df
-# from recommendation_engine.recommender.data_loader import load_processed_data
+from recommendation_engine.recommender.data_collection import users_df, destinations_df
+from recommendation_engine.recommender.data_loader import load_processed_data
 
-from data_collection import users_df, destinations_df
-from data_loader import load_processed_data
+# For testing
+# from data_collection import users_df, destinations_df
+# from data_loader import load_processed_data
 
 def encode_multi_label(df, column, prefix):
     mlb = MultiLabelBinarizer()

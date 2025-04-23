@@ -2,9 +2,11 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
-# from recommendation_engine.recommender.data_loader import load_processed_data
+# For api
+from recommendation_engine.recommender.data_loader import load_processed_data
 
-from data_loader import load_processed_data
+# For testing
+# from data_loader import load_processed_data
 
 def prepare_features(destinations_df):
     drop_columns = ['id', 'name', 'currency'] if 'currency' in destinations_df.columns else ['id', 'name']
