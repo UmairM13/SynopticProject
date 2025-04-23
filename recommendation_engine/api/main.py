@@ -9,17 +9,19 @@ from recommendation_engine.api.routes.destination_routes import router as destin
 
 app = FastAPI()
 
+# CORS configuration
+
 origins = [
-    "http://localhost:5173",  # Vite frontend
+    "http://localhost:5173",  
     "http://127.0.0.1:5173"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Can be ["*"] for testing
+    allow_origins=origins,  
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods like GET, POST, etc.
-    allow_headers=["*"],  # Allow all headers including X-Authorization
+    allow_methods=["*"],  
+    allow_headers=["*"],  
 )
 
 Base.metadata.create_all(bind=engine)
