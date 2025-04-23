@@ -3,9 +3,13 @@ import numpy as np
 from decimal import Decimal
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
-from recommendation_engine.recommender.data_loader import load_processed_data
 from datetime import datetime
-from recommendation_engine.recommender.content_based_model import prepare_features
+# from recommendation_engine.recommender.data_loader import load_processed_data
+# from recommendation_engine.recommender.content_based_model import prepare_features
+
+
+from data_loader import load_processed_data
+from content_based_model import prepare_features
 
 
 users_df, destinations_df = load_processed_data()
@@ -13,7 +17,6 @@ users_df, destinations_df = load_processed_data()
 # print("Columns in destinations_df:", destinations_df.columns)
 
 current_month = datetime.now().month
-
 
 # print("\n=== Data Validation ===")
 # print("Destination columns:", destinations_df.columns.tolist())
@@ -23,55 +26,33 @@ current_month = datetime.now().month
 # Drop non-numeric columns for model training
 drop_columns = ['id', 'name', 'currency']
 features = destinations_df.drop(columns=[col for col in drop_columns if col in destinations_df.columns])
-
-# Ensure all feature columns are numeric
-features = features.apply(pd.to_numeric, errors='coerce')
-
-features = features.fillna(0)
-
-# Handle missing values (mean for numerical, mode for categorical)
-for col in features.columns:
-    if features[col].dtype == 'object':
-        features[col] = features[col].fillna(features[col].mode()[0])
-    else:
-        features[col] = features[col].fillna(features[col].mean())
-
-# Normalize features using StandardScaler
+# Ensure all columns are numeric
+features = features.apply(pd.to_numeric, errors='coerce').fillna(0)
 scaler = StandardScaler()
 features_scaled = scaler.fit_transform(features)
-
-# print("NaN values before KNN:", np.isnan(features_scaled).sum())
 features_scaled = np.nan_to_num(features_scaled, nan=0.0)
 
-# Fit the KNN model with increased neighbors (set to 20)
-n_neighbors = 20
-knn = NearestNeighbors(n_neighbors=n_neighbors, metric='euclidean')
+# Fit KNN model 
+knn = NearestNeighbors(n_neighbors=20, metric='euclidean')
 knn.fit(features_scaled)
 
 
 def compute_past_similarity(destination_name, visited_names, features_df, similarity_matrix): 
     
-    if not visited_names:
+    if not visited_names or destination_name not in features_df['name'].values:
         return 0.0
-    
-    if destination_name not in features_df['name'].values:
-        return 0.0
-    
     target_id = features_df[features_df['name'] == destination_name].index[0]
     idx = list(features_df.index).index(target_id)
-    
     scores = []
     for past in visited_names:
         if past in features_df['name'].values:
             past_id = features_df[features_df['name'] == past].index[0]
             past_idx = list(features_df.index).index(past_id)
             scores.append(similarity_matrix[idx][past_idx])
-            
-    
     return np.mean(scores) if scores else 0.0
 
 
-def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.5, weight_similarity=0.3, weight_past=0.2):
+def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.2, weight_similarity=0.45, weight_past=0.2, weight_off_season=0.15):
     user = users_df[users_df['id'] == user_id]
     if user.empty:
         return "User ID not found in the database."
@@ -106,8 +87,8 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.5, weight
 
     # One-hot encoding for nationality, climate, and terrain preferences
     set_one_hot_encoding(user['nationality'].values[0], "country", user_vector)
-    set_one_hot_encoding(user['preferred_climate'].values[0], "climate", user_vector)
-    set_one_hot_encoding(user['preferred_terrain'].values[0], "terrain", user_vector)
+    set_one_hot_encoding(user['preferred_climate_original'].values[0], "climate", user_vector)
+    set_one_hot_encoding(user['preferred_terrain_original'].values[0], "terrain", user_vector)
 
     user_vector = pd.DataFrame(user_vector, columns=features.columns)
     user_vector_scaled = scaler.transform(user_vector)
@@ -117,59 +98,37 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.5, weight
     
     # Similarity function based on one-hot encoded columns for climate and terrain and budget comparison
     def calculate_similarity(destination, user):
-        similarity_score = 0
-
-        # Compare climate using one-hot encoded column names.
-        user_climate = user['preferred_climate'].values[0]
-        climate_col = f"climate_{user_climate}"
-        if climate_col in destination.index and destination[climate_col] == 1:
-            similarity_score += 1
-            print("Climate match!")
-        else:
-            print(f"No match for climate: expected {climate_col}")
-
-        # Compare terrain using one-hot encoded column names.
-        user_terrain = user['preferred_terrain'].values[0]
-        terrain_col = f"terrain_{user_terrain}"
-        if terrain_col in destination.index and destination[terrain_col] == 1:
-            similarity_score += 1
-            print("Terrain match!")
-        else:
-            print(f"No match for terrain: expected {terrain_col}")
-
-        # Budget comparison (within $50 range)
-        if isinstance(destination['avg_daily_budget'], Decimal):
-            destination_budget = float(destination['avg_daily_budget'])
-        else:
-            destination_budget = destination['avg_daily_budget']
+        def jaccard(set1, set2):
+            if not set1 or not set2:
+                return 0
+            return len(set1 & set2) / len(set1 | set2)
         
-        if isinstance(user['budget'].values[0], Decimal):
-            user_budget = float(user['budget'].values[0])
-        else:
-            user_budget = user['budget'].values[0]
-        
-        print(f"Comparing budgets: User's budget {user_budget}, Destination's budget {destination_budget}")
-        tolerance = user_budget * 0.1  # e.g. 10% leeway
-        if user_budget + tolerance >= destination_budget:
-            similarity_score += 1
-            print("Budget match!")
-        
-        return similarity_score
+        climates = set(map(str.strip, user['preferred_climate_original'].values[0].lower().split(',')))
+        terrains = set(map(str.strip, user['preferred_terrain_original'].values[0].lower().split(',')))
+        holidays = set(map(str.strip, user['holiday_type_original'].values[0].lower().split(',')))
 
+        dest_climates = {col.split('_', 1)[1].lower() for col in destination.index if col.startswith("climate_") and destination[col] == 1}
+        dest_terrains = {col.split('_', 1)[1].lower() for col in destination.index if col.startswith("terrain_") and destination[col] == 1}
+        dest_holidays = {col.split('_', 1)[1].lower() for col in destination.index if col.startswith("holiday_type_") and destination[col] == 1}
+
+        climate_score = jaccard(climates, dest_climates)
+        terrain_score = jaccard(terrains, dest_terrains)
+        holiday_score = jaccard(holidays, dest_holidays)
+
+        user_budget = float(user['budget'].values[0])
+        destination_budget = float(destination.get('avg_daily_budget_original', destination['avg_daily_budget']))
+        budget_score = 1 if destination_budget <= user_budget else max(0, 1 - (destination_budget - user_budget) / user_budget)
+
+        return (climate_score + terrain_score + holiday_score + budget_score) / 4
+    
     recommendations = []
     
     def calculate_off_season_score(destination_row):
-        current_month = datetime.now().month
         start = destination_row['off_season_start']
         end = destination_row['off_season_end']
-        
         if pd.isna(start) or pd.isna(end):
             return 0.3
-        if start <= end:
-            is_off_season = start <= current_month <= end
-        else:
-            is_off_season = current_month >= start or current_month <= end
-        
+        is_off_season = start <= current_month <= end if start <= end else current_month >= start or current_month <= end
         return 1.0 if is_off_season else 0.3
     
     
@@ -177,30 +136,22 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.5, weight
     # Fixed enumerate syntax - needs to be called with an iterable
     for i, idx in enumerate(indices[0]):
         destination = destinations_df.iloc[idx]
-        knn_score = distances[0][i]  # Use i directly since we're enumerating
+        knn_score = distances[0][i]
         similarity_score = calculate_similarity(destination, user)
         content_score = compute_past_similarity(destination['name'], visited, features_df, similarity_matrix)
-        
-        # Normalize scores for weighted calculation
-        normalized_knn_score = 1 / (1 + knn_score)  # Transform distance to similarity (closer to 1 means more similar)
-        normalized_similarity = similarity_score / 3.0  # Max similarity is 3 (climate, terrain, budget)
-        
+        normalized_knn_score = 1 / (1 + knn_score)
+        normalized_similarity = similarity_score  # already in range [0, 1]
+        off_season_score = calculate_off_season_score(destination)
+
         final_score = (
             weight_kNN * normalized_knn_score +
             weight_similarity * normalized_similarity +
-            weight_past * content_score
+            weight_past * content_score +
+            weight_off_season * off_season_score
         )
-        
-        off_season_score = calculate_off_season_score(destination)
-        
-        # Extract country value more safely
-        country_val = 'Unknown'
-        country_columns = [col for col in destination.index if col.startswith('country_')]
-        for col in country_columns:
-            if destination[col] == 1:
-                country_val = col.split('_', 1)[1]
-                break
-        
+
+        country_val = next((col.split('_', 1)[1] for col in destination.index if col.startswith('country_') and destination[col] == 1), 'Unknown')
+
         recommendations.append({
             'name': destination['name'],
             'country': country_val,
@@ -213,118 +164,123 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.5, weight
             'is_off_season': "Yes" if off_season_score > 0.5 else "No",
             'id': destination['id']
         })
-    
+
     recommendations_df = pd.DataFrame(recommendations)
-    if recommendations_df.empty:
-        return "No suitable destinations found."
-        
-    recommendations_df = recommendations_df.sort_values(by='final_score', ascending=False)
-    
-    # Return top n recommendations
-    return recommendations_df.head(n_recommendations)
+    return recommendations_df.sort_values(by='final_score', ascending=False).head(n_recommendations) if not recommendations_df.empty else "No suitable destinations found."
 
 def explain_recommendation(destination_id, user_id):
-    """Provide explanation for a specific destination recommendation."""
-    
+    """Provide explanation for a specific destination recommendation in JSON format."""
     user = users_df[users_df['id'] == user_id]
     destination_row = destinations_df[destinations_df['id'] == destination_id]
 
     if user.empty or destination_row.empty:
-        return "User ID or destination not found."
+        return {"error": "User ID or destination not found."}
 
-    # Extract the original (unscaled) destination data
     destination = destination_row.iloc[0]
     destination_name = destination['name']
-    explanation = [f"Why {destination_name} is recommended:"]
-    
-    
-    # Check if climate match
-    if 'preferred_climate' in user.columns:
-        user_climate = user['preferred_climate'].values[0]
-        climate_col = f"climate_{user_climate}"
-        if climate_col in destination.index and destination[climate_col] == 1:
-            explanation.append(f"- The {user_climate} climate matches your preferred climate.")
-        else:
-            actual_climates = [col.split('_')[1] for col in destination.index if col.startswith("climate_") and destination[col] == 1]  
-            if actual_climates:
-                explanation.append(f"x Climate differs: {destination_name} has {', '.join(actual_climates)} climate.")
-                
-    
-    # Check if terrain match
-    if 'preferred_terrain' in user.columns:
-        user_terrain = user['preferred_terrain'].values[0]
-        terrain_col = f"terrain_{user_terrain}"
-        if terrain_col in destination.index and destination[terrain_col] == 1:
-            explanation.append(f"- The {user_terrain} terrain matches your preferred terrain.")
-        else:
-            actual_terrains = [col.split('_')[1] for col in destination.index if col.startswith("terrain_") and destination[col] == 1]  
-            if actual_terrains:
-                explanation.append(f"x Terrain differs: {destination_name} has {', '.join(actual_terrains)} terrain.")
-    
-    # Check budget compatibility
-    if 'budget' in user.columns and 'avg_daily_budget' in destination.index:
-        user_budget_raw = user['daily_budget'].values[0] if 'daily_budget' in user.columns else user['budget'].values[0]
-        destination_budget_raw = destination.get('avg_daily_budget_original', destination['avg_daily_budget'])
+    explanation = {
+        "destination": destination_name,
+        "match_summary": [],
+        "details": {}
+    }
 
-        # Normalize types
-        user_budget = float(user_budget_raw)
-        destination_budget = float(destination_budget_raw)
+    # Jaccard helper
+    def jaccard(set1, set2):
+        if not set1 or not set2:
+            return 0
+        return len(set1 & set2) / len(set1 | set2)
 
-        user_budget_display = round(user_budget, 2)
-        destination_budget_display = round(destination_budget, 2)
+    # Prepare sets
+    user_climates = set(map(str.lower, map(str.strip, user['preferred_climate_original'].values[0].split(','))))
+    user_terrains = set(map(str.lower, map(str.strip, user['preferred_terrain_original'].values[0].split(','))))
+    user_holidays = set(map(str.lower, map(str.strip, user['holiday_type_original'].values[0].split(','))))
 
-        tolerance = user_budget * 0.1  # 10% leeway
-        if user_budget + tolerance >= destination_budget:
-            explanation.append(
-                f"- The average daily budget of {destination_name} (${destination_budget_display}) is within your budget (${user_budget_display})."
-            )
-        else:
-            explanation.append(
-                f"x Budget differs: {destination_name} has an average daily budget of ${destination_budget_display}, while your budget is ${user_budget_display}."
-            )
-            
-    # Check off-season preference
-    if 'off_season_start' in destination.index and 'off_season_end' in destination.index:
-        if pd.notna(destination['off_season_start']) and pd.notna(destination['off_season_end']):
-            off_start = int(destination['off_season_start'])
-            off_end = int(destination['off_season_end'])
-            
-            # Get month names
-            import calendar
-            month_names = list(calendar.month_name)
-            off_season_months = []
-            
-            if off_start <= off_end:
-                off_season_months = month_names[off_start:off_end+1]
-            else:
-                off_season_months = month_names[off_start:] + month_names[1:off_end+1]
-            
-            if current_month >= off_start or current_month <= off_end:
-                explanation.append(f"✓ Off-season bonus: Currently in off-season ({', '.join(off_season_months)})")
-            else:
-                explanation.append(f"× Note: Off-season is {', '.join(off_season_months)}")
-    
-    # Content-based similarity explanation 
-    features_df, similarity_matrix = prepare_features(destinations_df)
-    
-    if 'past_destinations' in user.columns:
-        past_destinations = user.iloc[0]['past_destinations']
-        
-        if isinstance(past_destinations, (list, np.ndarray, pd.Series)):
-                past_destinations = str(past_destinations[0]) if len(past_destinations) > 0 else ""
+    dest_climates = set(col.split('_', 1)[1].lower() for col in destination.index if col.startswith("climate_") and destination[col] == 1)
+    dest_terrains = set(col.split('_', 1)[1].lower() for col in destination.index if col.startswith("terrain_") and destination[col] == 1)
+    dest_holidays = set(col.split('_', 1)[1].lower() for col in destination.index if col.startswith("holiday_type_") and destination[col] == 1)
 
-        if isinstance(past_destinations, str) and past_destinations.strip():
-                visited = [d.strip() for d in past_destinations.split(',') if d.strip()]
-        else:
-            visited = []
+    # Climate match explanation
+    climate_overlap = user_climates & dest_climates
+    if climate_overlap:
+        explanation["match_summary"].append("climate_match")
     else:
-        visited = []  
+        explanation["details"]["climate_mismatch"] = {
+            "user_preference": list(user_climates),
+            "destination_climates": list(dest_climates)
+        }
+
+    # Terrain match explanation
+    terrain_overlap = user_terrains & dest_terrains
+    if terrain_overlap:
+        explanation["match_summary"].append("terrain_match")
+    else:
+        explanation["details"]["terrain_mismatch"] = {
+            "user_preference": list(user_terrains),
+            "destination_terrains": list(dest_terrains)
+        }
+
+    # Holiday type match
+    holiday_overlap = user_holidays & dest_holidays
+    if holiday_overlap:
+        explanation["match_summary"].append("holiday_type_match")
+    else:
+        explanation["details"]["holiday_type_mismatch"] = {
+            "user_preference": list(user_holidays),
+            "destination_holiday_types": list(dest_holidays)
+        }
+
+    # Budget explanation (always include)
+    user_budget = float(user['daily_budget'].values[0])
+    dest_budget = float(destination.get('avg_daily_budget_original', destination['avg_daily_budget']))
+    tolerance = user_budget * 0.1
+    within_budget = user_budget + tolerance >= dest_budget
+
+    if within_budget:
+        explanation["match_summary"].append("budget_match")
+
+    explanation["details"]["budget"] = {
+        "user_daily_budget": round(user_budget, 2),
+        "destination_daily_cost": round(dest_budget, 2),
+        "within_budget": within_budget
+    }
     
-    similar_to = [d for d in visited if d in features_df['name'].values and compute_past_similarity(destination_name, [d], features_df, similarity_matrix) > 0.6]    
+    # Off-season explanation
+    start = destination['off_season_start']
+    end = destination['off_season_end']
+    if pd.notna(start) and pd.notna(end):
+        import calendar
+        month_names = list(calendar.month_name)
+        if start <= end:
+            off_months = month_names[start:end + 1]
+        else:
+            off_months = month_names[start:] + month_names[1:end + 1]
+        in_off_season = start <= current_month <= end if start <= end else current_month >= start or current_month <= end
+        explanation["details"]["off_season"] = {
+            "months": off_months,
+            "currently_in_off_season": in_off_season
+        }
+
+    # Past destination similarity explanation
+    from content_based_model import prepare_features
+    features_df, similarity_matrix = prepare_features(destinations_df)
+
+    past_destinations = user.iloc[0]['past_destinations']
+    visited = []
+    if isinstance(past_destinations, (list, np.ndarray, pd.Series)):
+        past_destinations = str(past_destinations[0]) if len(past_destinations) > 0 else ""
+    if isinstance(past_destinations, str) and past_destinations.strip():
+        visited = [d.strip() for d in past_destinations.split(',') if d.strip()]
+
+    similar_to = [
+        d for d in visited
+        if d in features_df['name'].values and compute_past_similarity(destination_name, [d], features_df, similarity_matrix) > 0.6
+    ]
     if similar_to:
-        explanation.append(f"- Similar to your past destinations: {', '.join(similar_to)}")
-        
-    return "\n".join(explanation)
+        explanation["match_summary"].append("past_similarity")
+        explanation["details"]["similar_to_past_destinations"] = similar_to
+
+    return explanation
+
 
 if __name__ == "__main__":
     # Test with users
@@ -340,7 +296,7 @@ if __name__ == "__main__":
         print("\nExplanation Details:")
         for _, row in recommendations.iterrows():
             print("\n" + "="*50)
-            explanation = explain_recommendation(row['name'], user_id)
+            explanation = explain_recommendation(row['id'], user_id)
             print(explanation)
     else:
         print(recommendations) 

@@ -50,6 +50,7 @@ users_df.fillna({
     "preferred_climate": "any",  # Handle 'any' climate
     "preferred_terrain": "Unknown",  # Handle missing preferred_terrain
     "past_destinations": "Unknown",
+    "holiday_type": "Unknown",
     "budget": users_df["budget"].mean(),
     "trip_start_date": datetime.now().date(),  # Assign current date if missing
     "trip_end_date": datetime.now().date()  # Assign current date if missing
