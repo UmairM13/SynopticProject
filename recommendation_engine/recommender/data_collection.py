@@ -140,11 +140,13 @@ processed_data_dir = os.path.join(current_directory, 'processed_data')
 os.makedirs(processed_data_dir, exist_ok=True)
 
 # Print sample data
-print("\nUsers DataFrame:")
-print(users_df.head())
+# print("\nUsers DataFrame:")
+# print(users_df.head())
 
-print("\nDestinations DataFrame:")
-print(destinations_df.head())
+# print("\nDestinations DataFrame:")
+# print(destinations_df.head())
 
-print("\nTravel Costs DataFrame:")
-print(travel_costs_df.head())
+# print("\nTravel Costs DataFrame:")
+# print(travel_costs_df.head())
+
+print("Data collection complete.")
