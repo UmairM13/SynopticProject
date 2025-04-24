@@ -11,6 +11,9 @@ import Login from "./pages/login";
 import Register from "./pages/Register";
 import OnboardingFlow from "./pages/onboarding/OnboardingFlow";
 import RecommendationPage from "./pages/RecommendationPage";
+import UserProfile from "./pages/Notebook";
+import AppNavbar from "./components/AppNavbar";
+import Preferences from "./pages/onboarding/Preferences";
 
 function InactivityLogout() {
   const navigate = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,13 +43,19 @@ function InactivityLogout() {
 function App() {
   return (
     <Router>
+      <AppNavbar />
       <InactivityLogout />
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/onboarding" element={<OnboardingFlow />} />
+        <Route path="/notebook" element={<UserProfile />} />
         <Route path="/recommendations" element={<RecommendationPage />} />
+        <Route path="/preferences" element={<Preferences />} />
+
+        {/* Catch-all route for 404 */}
+        <Route path="/404" element={<div>Page Not Found</div>} />
         {/* If needed, fallback route */}
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
