@@ -5,11 +5,11 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer
 
 # Dynamically load data
-from recommendation_engine.recommender.data_collection import users_df, destinations_df
+from recommendation_engine.recommender.data_collection import users_df, destinations_df, past_destinations_df
 from recommendation_engine.recommender.data_loader import load_processed_data
 
-# For testing
-# from data_collection import users_df, destinations_df
+# # For testing
+# from data_collection import users_df, destinations_df, past_destinations_df
 # from data_loader import load_processed_data
 
 def encode_multi_label(df, column, prefix):
@@ -47,6 +47,9 @@ def save_processed(users_df, destinations_df, preprocessors):
 
     users_df.to_csv(os.path.join(path, "processed_users.csv"), index=False)
     destinations_df.to_csv(os.path.join(path, "processed_destinations.csv"), index=False)
+    
+    past_destinations_df.to_pickle(os.path.join(path, "processed_past_destinations.pkl"))
+    past_destinations_df.to_csv(os.path.join(path, "processed_past_destinations.csv"), index=False)
 
 def run_preprocessing():
     global users_df, destinations_df
@@ -84,6 +87,12 @@ def run_preprocessing():
         user_terrain_encoded,
         user_holiday_encoded
     ], axis=1)
+    
+    
+    # --- Past Destinations ---
+    past_destinations_df["trip_end_date"] = pd.to_datetime(past_destinations_df["trip_end_date"], errors='coerce')
+    past_destinations_df.dropna(subset=["trip_end_date", "destination_name"], inplace=True)
+    past_destinations_df.sort_values(by=["user_id", "trip_end_date"], ascending=[True, False], inplace=True)
 
     # Save
     preprocessors = {

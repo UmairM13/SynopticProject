@@ -1,46 +1,47 @@
 import pandas as pd
 from surprise import SVD, Dataset, Reader
 from surprise.model_selection import train_test_split
-from data_loader import load_processed_data
+from recommendation_engine.recommender.data_loader import load_processed_data
 
 
 def prepare_collab_data():
-    """Create user-item matrix from past destinations"""
-    users_df, destinations_df = load_processed_data()
-    
-    print("-- Destinations columns:", destinations_df.columns.tolist())
-    print("-- Users columns:", users_df.columns.tolist())
-    # Clean name columns for case-insensitive matching
-    destinations_df['name_clean'] = destinations_df['name'].str.strip().str.lower()
+    """Creates a user-item interaction matrix using the structured past_destinations table."""
+    users_df, destinations_df, past_destinations_df = load_processed_data()
 
-    ratings = []
-    for _, user in users_df.iterrows():
-        if isinstance(user['past_destinations'], list):
-            for dest_name in user['past_destinations']:
-                dest_name_clean = dest_name.strip().lower()
-                matched_dest = destinations_df[destinations_df['name_clean'] == dest_name_clean]
+    # Clean up IDs and destination names
+    past_destinations_df["destination_name_clean"] = past_destinations_df["destination_name"].str.lower().str.strip()
+    destinations_df["name_clean"] = destinations_df["name"].str.lower().str.strip()
 
-                if not matched_dest.empty:
-                    ratings.append({
-                        'user_id': str(user['id']),
-                        'destination_id': str(matched_dest['id'].values[0]),
-                        'rating': 5  # Implicit feedback (user visited = positive rating)
-                    })
+    # Merge past destinations with valid destination IDs
+    merged = past_destinations_df.merge(
+        destinations_df[["id", "name_clean"]],
+        left_on="destination_name_clean",
+        right_on="name_clean",
+        how="inner"
+    )
 
-    ratings_df = pd.DataFrame(ratings)
-    print(f"- Built {len(ratings_df)} user-destination ratings.")
+    if merged.empty:
+        print("X No matched past destinations.")
+        return pd.DataFrame()
+
+    ratings_df = merged[["user_id", "id"]].copy()
+    ratings_df.rename(columns={"id": "destination_id"}, inplace=True)
+    ratings_df["user_id"] = ratings_df["user_id"].astype(str)
+    ratings_df["destination_id"] = ratings_df["destination_id"].astype(str)
+    ratings_df["rating"] = 5  # Implicit: visited = liked
+
+    print(f"- Built {len(ratings_df)} interactions from past_destinations.")
     return ratings_df
 
 
 def train_collaborative_model():
     ratings_df = prepare_collab_data()
-
     if ratings_df.empty:
-        print("X No ratings available for training.")
+        print("X No data available for training.")
         return None
 
     reader = Reader(rating_scale=(0.5, 5))
-    data = Dataset.load_from_df(ratings_df[['user_id', 'destination_id', 'rating']], reader)
+    data = Dataset.load_from_df(ratings_df[["user_id", "destination_id", "rating"]], reader)
     trainset = data.build_full_trainset()
 
     model = SVD(n_factors=50, n_epochs=20, lr_all=0.005, reg_all=0.02)
@@ -51,38 +52,32 @@ def train_collaborative_model():
 
 
 def collab_recommendations(user_id, model, n=10):
-    users_df, destinations_df = load_processed_data()
-    destinations_df['destination_id'] = destinations_df['id'].astype(str)
+    users_df, destinations_df, past_destinations_df = load_processed_data()
+    destinations_df["destination_id"] = destinations_df["id"].astype(str)
 
-    # Get destinations the user has already visited
-    user_row = users_df[users_df['id'] == int(user_id)]
-    visited = user_row.iloc[0]['past_destinations'] if not user_row.empty else []
+    visited_ids = past_destinations_df[past_destinations_df["user_id"] == user_id]["destination_name"].str.lower().str.strip()
+    visited_ids = destinations_df[destinations_df["name"].str.lower().str.strip().isin(visited_ids)]["destination_id"].tolist()
 
-    visited_lower = [v.lower().strip() for v in visited]
-    all_ids = destinations_df[['destination_id', 'name']]
+    # Filter unseen destinations
+    unseen_df = destinations_df[~destinations_df["destination_id"].isin(visited_ids)]
 
-    # Filter out already visited destinations
-    unseen = all_ids[~all_ids['name'].str.lower().str.strip().isin(visited_lower)]
-
-    # Predict ratings for unseen destinations
+    # Predict and rank
     predictions = []
-    for _, row in unseen.iterrows():
-        pred = model.predict(str(user_id), row['destination_id'])
-        predictions.append((row['destination_id'], pred.est))
+    for _, row in unseen_df.iterrows():
+        pred = model.predict(str(user_id), row["destination_id"])
+        predictions.append((row["id"], row["name"], pred.est))
 
-    # Top-N recommendations
-    top_dest_ids = sorted(predictions, key=lambda x: x[1], reverse=True)[:n]
-    recommended_ids = [x[0] for x in top_dest_ids]
+    top_predictions = sorted(predictions, key=lambda x: x[2], reverse=True)[:n]
+    top_df = pd.DataFrame(top_predictions, columns=["id", "name", "predicted_rating"])
 
-    return destinations_df[destinations_df['destination_id'].isin(recommended_ids)][['id', 'name']]
+    return top_df
 
 
 if __name__ == "__main__":
     model = train_collaborative_model()
-
     if model:
         user_id = 6
-        print(f"\nRecommendations for User {user_id}:")
+        print(f"\nCollaborative Recommendations for User {user_id}:")
         print(collab_recommendations(user_id, model))
     else:
         print("X No model could be trained.")

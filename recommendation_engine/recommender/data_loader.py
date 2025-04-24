@@ -9,9 +9,11 @@ def load_processed_data():
     
     destinations = pd.read_pickle(os.path.join(save_dir, "processed_destinations.pkl"))
     users = pd.read_pickle(os.path.join(save_dir, "processed_users.pkl"))
+    past_destinations = pd.read_pickle(os.path.join(save_dir, "processed_past_destinations.pkl"))
     
     users = users.copy()
     destinations = destinations.copy()
+    past_destinations = past_destinations.copy()
 
     users_numeric = users.select_dtypes(include=[np.number]).columns
     users[users_numeric] = users[users_numeric].fillna(0)
@@ -19,4 +21,4 @@ def load_processed_data():
     dest_numeric = destinations.select_dtypes(include=[np.number]).columns
     destinations[dest_numeric] = destinations[dest_numeric].fillna(0)
 
-    return users, destinations
+    return users, destinations, past_destinations

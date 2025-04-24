@@ -26,7 +26,10 @@ def prepare_features(destinations_df):
     return features_df, similarity_matrix
 
 def recommend_similar_destinations(destination_name, destinations_df, features_df, similarity_matrix, top_n=10):
-    if destination_name not in destinations_df['name'].values:
+    destination_name = destination_name.strip().lower()
+    destinations_df['name_lower'] = destinations_df['name'].str.strip().str.lower()
+
+    if destination_name not in destinations_df['name_lower'].values:
         return f"Destination '{destination_name}' not found."
 
     target_id = features_df[features_df['name'] == destination_name].index[0]
