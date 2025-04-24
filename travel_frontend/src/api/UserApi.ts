@@ -1,12 +1,14 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3333";
+const API_URL = "http://localhost:8000/travel/api";
 
 export const signup = async (userData: {
-  firstName: string;
-  lastName: string;
-  username: string;
+  email: string;
   password: string;
+  age: number;
+  nationality: string;
+  current_city: string;
+  current_country: string;
 }) => {
   try {
     const response = await axios.post(`${API_URL}/users`, userData);
@@ -19,11 +21,8 @@ export const signup = async (userData: {
   }
 };
 
-export const login = async (userData: {
-  username: string;
-  password: string;
-}) => {
-  const response = await fetch(`${API_URL}/login`, {
+export const login = async (userData: { email: string; password: string }) => {
+  const response = await fetch(`${API_URL}/users/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -36,7 +35,7 @@ export const login = async (userData: {
   }
   const data = await response.json();
   localStorage.setItem("id", data.id);
-  localStorage.setItem("token", data.token);
+  localStorage.setItem("session_token", data.session_token);
 };
 
 export const logout = async (token: string) => {
@@ -44,8 +43,8 @@ export const logout = async (token: string) => {
     const response = await fetch(`${API_URL}/logout`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json", // Include this to specify the content type
+        "X-Authorization": token,
+        "Content-Type": "application/json",
       },
     });
 

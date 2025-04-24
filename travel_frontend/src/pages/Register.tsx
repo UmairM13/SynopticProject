@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Container, Form, Button, Row, Col, Alert } from "react-bootstrap";
+import { signup } from "../api/UserApi";
+import { useNavigate } from "react-router-dom";
 
 const countries = [
   "British",
@@ -29,6 +31,10 @@ const Register = () => {
   });
 
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const navigate = useNavigate();
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -38,8 +44,10 @@ const Register = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
 
     if (form.password !== form.confirmPassword) {
       setError("Passwords do not match.");
@@ -56,22 +64,41 @@ const Register = () => {
       return;
     }
 
-    setError("");
-
     const payload = {
-      ...form,
+      email: form.email.trim(),
+      password: form.password.trim(),
+      age: parseInt(form.age, 10),
       nationality:
         form.nationality === "Other"
           ? form.customNationality.trim()
           : form.nationality,
-      email: form.email.trim(),
-      currentCity: form.currentCity.trim(),
-      currentCountry: form.currentCountry.trim(),
-      age: parseInt(form.age, 10),
+      current_city: form.currentCity.trim(),
+      current_country: form.currentCountry.trim(),
+
+      // Temporary fields for onboarding
+      preferred_climate: "Any",
+      preferred_terrain: "Unknown",
+      past_destinations: "",
+      budget: 1500,
+      holiday_type: "Relaxed",
+      trip_start_date: null,
+      trip_end_date: null,
     };
 
-    console.log("Submitted:", payload);
-    // TODO: send payload to backend
+    try {
+      setLoading(true);
+      await signup(payload);
+      setSuccess("Account created successfully!");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Error signing up.");
+      }
+    }
   };
 
   return (
@@ -79,6 +106,7 @@ const Register = () => {
       <h2 className="mb-4 text-center">Create Your Account</h2>
       <Form onSubmit={handleSubmit}>
         {error && <Alert variant="danger">{error}</Alert>}
+        {success && <Alert variant="success">{success}</Alert>}
 
         <Row className="mb-3">
           <Col md={6}>
@@ -189,8 +217,13 @@ const Register = () => {
         </Row>
 
         <div className="d-grid">
-          <Button className="btn-accent" type="submit" size="lg">
-            Create Account
+          <Button
+            className="btn-accent"
+            type="submit"
+            size="lg"
+            disabled={loading}
+          >
+            {loading ? "Creating..." : "Create Account"}
           </Button>
         </div>
       </Form>

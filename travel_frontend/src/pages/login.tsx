@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../services/userApi";
+import { login } from "../api/UserApi";
+import { Container, Form, Button, Alert } from "react-bootstrap";
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState<string>("");
+  const [email, setEmail] = useState<string>(""); // Changed to email for consistency
   const [password, setPassword] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +17,7 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const userData = { username, password };
+      const userData = { email, password };
       await login(userData);
       navigate("/dashboard");
     } catch (error: any) {
@@ -27,50 +28,46 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="d-flex justify-content-center mt-5">
-      <div className="card p-4 shadow" style={{ width: "400px" }}>
-        <h1 className="text-center mb-4">Login</h1>
-        <form onSubmit={handleLogin}>
-          <div className="mb-3">
-            <label htmlFor="username" className="form-label">
-              Username
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
+    <Container className="mt-5 mb-5" style={{ maxWidth: "500px" }}>
+      <h2 className="text-center mb-4">Login to Your Account</h2>
+      <Form onSubmit={handleLogin}>
+        {error && <Alert variant="danger">{error}</Alert>}
 
-          <div className="mb-3">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
-            <input
-              type="password"
-              className="form-control"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
+        <Form.Group className="mb-3" controlId="loginEmail">
+          <Form.Label>Email</Form.Label>
+          <Form.Control
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </Form.Group>
 
-          <button
+        <Form.Group className="mb-4" controlId="loginPassword">
+          <Form.Label>Password</Form.Label>
+          <Form.Control
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </Form.Group>
+
+        <div className="d-grid">
+          <Button
+            variant="primary"
             type="submit"
-            className="btn btn-primary w-100"
+            size="lg"
+            className="btn-accent"
             disabled={loading}
           >
             {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
-
-        {error && <div className="alert alert-danger mt-3">{error}</div>}
-      </div>
-    </div>
+          </Button>
+        </div>
+      </Form>
+    </Container>
   );
 };
 
