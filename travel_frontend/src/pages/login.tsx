@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/UserApi";
 import { Container, Form, Button, Alert } from "react-bootstrap";
+import { useAuth } from "../context/AuthContext";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>(""); // Changed to email for consistency
@@ -10,6 +11,7 @@ const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const auth = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +21,9 @@ const Login: React.FC = () => {
     try {
       const userData = { email, password };
       await login(userData);
-      navigate("/onboarding");
+      auth.login();
+      const onboarded = localStorage.getItem("has_onboarded") === "true";
+      navigate(onboarded ? "/recommendations" : "/onboarding");
     } catch (error: any) {
       setError(error.message || "Invalid credentials");
     } finally {
@@ -65,6 +69,15 @@ const Login: React.FC = () => {
           >
             {loading ? "Logging in..." : "Login"}
           </Button>
+        </div>
+
+        <div className="text-center mt-3">
+          <span className="text-muted">
+            Don't have an account?{" "}
+            <a href="/register" className="fw-semibold text-decoration-none">
+              Sign up here
+            </a>
+          </span>
         </div>
       </Form>
     </Container>

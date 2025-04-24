@@ -4,6 +4,8 @@ import ClimatePreferences from "./ClimatePreference";
 import HolidayPreferences from "./HolidayPreferences";
 import BudgetDateInput from "./BudgetDateStep";
 import FinalReview from "./FinalReview";
+import { updateUser } from "../../api/UserApi";
+import { useNavigate } from "react-router-dom";
 
 // You can adjust this to include email, age, etc. from context if needed
 interface OnboardingFormData {
@@ -27,6 +29,8 @@ const OnboardingFlow = () => {
     trip_end_date: "",
   });
 
+  const navigate = useNavigate();
+
   const nextStep = () => setStep((prev) => prev + 1);
   //   const prevStep = () => setStep((prev) => prev - 1);
 
@@ -34,9 +38,31 @@ const OnboardingFlow = () => {
     setFormData((prev) => ({ ...prev, ...newData }));
   };
 
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async () => {
     console.log("Submitting final onboarding data:", formData);
     // TODO: Send to backend via API call
+    try {
+      const userId = localStorage.getItem("id");
+      if (!userId) throw new Error("User ID not found in local storage");
+
+      const payload = {
+        preferred_terrain: formData.preferred_terrain.join(", "),
+        preferred_climate: formData.preferred_climate.join(", "),
+        holiday_type: formData.holiday_type.join(", "),
+        budget: formData.budget ? parseFloat(formData.budget) : null,
+        trip_start_date: formData.trip_start_date || null,
+        trip_end_date: formData.trip_end_date || null,
+        has_onboarded: true,
+      };
+
+      await updateUser(parseInt(userId), payload);
+      localStorage.setItem("has_onboarded", "true");
+      console.log("User preferences updated successfully");
+
+      navigate("/notebook");
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
+    }
   };
 
   const steps = [
