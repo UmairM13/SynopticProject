@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from recommendation_engine.api.models.user_models import User
+from recommendation_engine.api.models.past_destination_model import PastDestination
 import uuid, hashlib, os
 
 def create_user(db: Session, user_data: dict):
@@ -74,3 +75,40 @@ def delete_user(db: Session, user_id: int):
     
     db.delete(user)
     db.commit()
+
+
+def add_past_destination(db: Session, user_id: int, data: dict):
+    destination = PastDestination(
+        user_id=user_id,
+        destination_name=data["destination_name"],
+        trip_start_date=data.get("trip_start_date"),
+        trip_end_date=data.get("trip_end_date"),
+        rating=data.get("rating"),
+        notes=data.get("notes")
+    )
+    db.add(destination)
+    db.commit()
+    db.refresh(destination)
+    return destination
+
+
+def get_user_past_destinations(db: Session, user_id: int):
+    return db.query(PastDestination).filter(PastDestination.user_id == user_id).all()
+
+
+def update_past_destination(db: Session, user_id: int, destination_id: int, updates: dict):
+    dest = db.query(PastDestination).filter(
+        PastDestination.user_id == user_id,
+        PastDestination.id == destination_id
+    ).first()
+
+    if not dest:
+        return {"error": "Past destination not found."}
+
+    for key, value in updates.items():
+        if hasattr(dest, key):
+            setattr(dest, key, value)
+
+    db.commit()
+    db.refresh(dest)
+    return dest

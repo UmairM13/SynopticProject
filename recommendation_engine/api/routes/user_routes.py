@@ -145,4 +145,18 @@ def delete_user(
     return {"message": "User deleted successfully"}
 
 
-    
+@router.post("/{user_id}/past-destinations")
+def add_destination(user_id: int, data: dict, db: Session = Depends(get_db)):
+    return user_service.add_past_destination(db, user_id, data)
+
+@router.get("/{user_id}/past-destinations")
+def get_user_past_destinations(user_id: int, db: Session = Depends(get_db)):
+    return user_service.get_user_past_destinations(db, user_id)
+
+@router.patch("/{user_id}/past-destinations/{destination_id}")
+def update_past_destination(user_id: int, destination_id: int, data: dict, db: Session = Depends(get_db)):
+    updated = user_service.update_past_destination(db, user_id, destination_id, data)
+    if isinstance(updated, dict) and updated.get("error"):
+        raise HTTPException(status_code=404, detail=updated["error"])
+    return updated
+
