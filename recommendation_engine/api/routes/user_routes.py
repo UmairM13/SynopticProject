@@ -93,6 +93,7 @@ async def login(request: Request, db: Session = Depends(get_db)):
     return {
         "id": user.id,
         "session_token": user.session_token,
+        "has_onboarded": user.has_onboarded,
         "message": "Login successful"
     }
     
