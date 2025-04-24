@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime
+from sqlalchemy import Column, Integer, Boolean, String, Float, Date, DateTime
 from sqlalchemy.sql import func
 from recommendation_engine.api.models.database import Base
 
@@ -22,6 +22,7 @@ class User(Base):
     salt = Column(String(255))
     session_token = Column(String(255))
     created_at = Column(DateTime, default=func.now())
+    has_onboarded = Column(Boolean, default=False)
 
     def __init__(self, nationality, current_city, current_country, age, 
                  preferred_climate, preferred_terrain, past_destinations, 
@@ -42,3 +43,4 @@ class User(Base):
         self.password = password
         self.salt = salt
         self.session_token = session_token
+        self.has_onboarded = False 

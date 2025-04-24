@@ -58,7 +58,8 @@ cursor.execute("""
         password VARCHAR(255),
         salt VARCHAR(255),
         session_token VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        has_onboarded BOOLEAN DEFAULT FALSE,
     );
 """)
 
