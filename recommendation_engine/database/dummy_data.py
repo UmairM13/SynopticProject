@@ -127,36 +127,36 @@ cursor.execute("""
 
 # Insert dummy data into past_destinations table
 cursor.execute("""
-    INSERT INTO past_destinations (user_id, destination_name, trip_end_date, rating, notes) VALUES
-    (1, 'Bali', '2024-06-15', 4.8, 'Great nature and local food'),
-    (1, 'Tokyo', '2023-12-20', 4.6, 'Loved the culture and efficiency'),
-    
-    (2, 'Paris', '2023-07-10', 4.5, 'Eiffel Tower was amazing'),
-    (2, 'Cape Town', '2022-12-05', 4.2, 'Loved the landscapes and people'),
-    
-    (3, 'Paris', '2022-09-12', 4.0, 'Charming, but too crowded in peak season'),
-    (3, 'Bali', '2024-01-22', 4.7, 'Perfect for beach and food'),
-    
-    (4, 'Tokyo', '2023-04-18', 4.6, 'Cherry blossom season was magical'),
-    (4, 'Bali', '2023-08-08', 4.3, 'Nice surf and scenic hikes'),
-    
-    (5, 'Rome', '2024-02-10', 4.1, 'Historical sights were amazing'),
-    (5, 'Sydney', '2023-11-23', 4.4, 'Laid-back lifestyle, loved the beaches'),
-    
-    (6, 'Moscow', '2023-10-01', 3.9, 'Cold but beautiful'),
-    (6, 'London', '2022-05-15', 4.0, 'Enjoyed the museums and markets'),
-    
-    (7, 'London', '2023-06-09', 4.2, 'Great shopping and shows'),
-    (7, 'Rome', '2022-11-29', 4.1, 'Nice vibe, lots of tourists though'),
-    
-    (8, 'Barcelona', '2023-03-12', 4.5, 'Energetic city with great nightlife'),
-    (8, 'Lisbon', '2023-06-20', 4.3, 'Good food, scenic views'),
-    
-    (9, 'Cairo', '2023-08-01', 4.4, 'Hot but incredible historical sites'),
-    (9, 'Sydney', '2024-03-15', 4.6, 'Epic coastal drives'),
-    
-    (10, 'London', '2023-09-03', 4.0, 'Museum hopping was fun'),
-    (10, 'Bangkok', '2024-01-19', 4.2, 'Loved the street food and markets');
+    INSERT INTO past_destinations (user_id, destination_name, trip_start_date, trip_end_date, rating, notes) VALUES
+    (1, 'Bali', '2024-06-07', '2024-06-15', 4.8, 'Great nature and local food'),
+    (1, 'Tokyo', '2023-12-10', '2023-12-20', 4.6, 'Loved the culture and efficiency'),
+
+    (2, 'Paris', '2023-07-01', '2023-07-10', 4.5, 'Eiffel Tower was amazing'),
+    (2, 'Cape Town', '2022-11-25', '2022-12-05', 4.2, 'Loved the landscapes and people'),
+
+    (3, 'Paris', '2022-09-03', '2022-09-12', 4.0, 'Charming, but too crowded in peak season'),
+    (3, 'Bali', '2024-01-12', '2024-01-22', 4.7, 'Perfect for beach and food'),
+
+    (4, 'Tokyo', '2023-04-08', '2023-04-18', 4.6, 'Cherry blossom season was magical'),
+    (4, 'Bali', '2023-07-29', '2023-08-08', 4.3, 'Nice surf and scenic hikes'),
+
+    (5, 'Rome', '2024-01-31', '2024-02-10', 4.1, 'Historical sights were amazing'),
+    (5, 'Sydney', '2023-11-13', '2023-11-23', 4.4, 'Laid-back lifestyle, loved the beaches'),
+
+    (6, 'Moscow', '2023-09-21', '2023-10-01', 3.9, 'Cold but beautiful'),
+    (6, 'London', '2022-05-05', '2022-05-15', 4.0, 'Enjoyed the museums and markets'),
+
+    (7, 'London', '2023-05-30', '2023-06-09', 4.2, 'Great shopping and shows'),
+    (7, 'Rome', '2022-11-19', '2022-11-29', 4.1, 'Nice vibe, lots of tourists though'),
+
+    (8, 'Barcelona', '2023-03-02', '2023-03-12', 4.5, 'Energetic city with great nightlife'),
+    (8, 'Lisbon', '2023-06-10', '2023-06-20', 4.3, 'Good food, scenic views'),
+
+    (9, 'Cairo', '2023-07-22', '2023-08-01', 4.4, 'Hot but incredible historical sites'),
+    (9, 'Sydney', '2024-03-05', '2024-03-15', 4.6, 'Epic coastal drives'),
+
+    (10, 'London', '2023-08-24', '2023-09-03', 4.0, 'Museum hopping was fun'),
+    (10, 'Bangkok', '2024-01-09', '2024-01-19', 4.2, 'Loved the street food and markets');
 """)
 
 

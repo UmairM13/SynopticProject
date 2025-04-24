@@ -97,6 +97,7 @@ cursor.execute("""
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
         destination_name VARCHAR(255) NOT NULL,
+        trip_start_date DATE,
         trip_end_date DATE,
         rating DECIMAL(3,2),
         notes TEXT,
