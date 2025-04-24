@@ -59,7 +59,7 @@ cursor.execute("""
         salt VARCHAR(255),
         session_token VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        has_onboarded BOOLEAN DEFAULT FALSE,
+        has_onboarded BOOLEAN DEFAULT FALSE
     );
 """)
 
