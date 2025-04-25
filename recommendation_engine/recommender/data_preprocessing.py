@@ -7,6 +7,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinar
 # Dynamically load data
 from recommendation_engine.recommender.data_collection import users_df, destinations_df, past_destinations_df
 from recommendation_engine.recommender.data_loader import load_processed_data
+from recommendation_engine.recommender.data_loader import DataManager
 
 # # For testing
 # from data_collection import users_df, destinations_df, past_destinations_df
@@ -117,7 +118,8 @@ def run_preprocessing():
     save_processed(users_df, destinations_df, preprocessors)
 
     # Reload to ensure integrity
-    users_df, destinations_df, _ = load_processed_data()
+    DataManager.get_instance().refresh()
+
 
     return {"status": "success", "message": "Preprocessing completed and saved."}
 

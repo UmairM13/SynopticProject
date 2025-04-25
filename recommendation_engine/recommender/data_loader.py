@@ -22,3 +22,10 @@ def load_processed_data():
     destinations[dest_numeric] = destinations[dest_numeric].fillna(0)
 
     return users, destinations, past_destinations
+
+
+# NEW: Singleton-like helper to always refresh from disk
+class DataManager:
+    @staticmethod
+    def refresh():
+        return load_processed_data()

@@ -6,7 +6,7 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 from datetime import datetime
 # For api
-from recommendation_engine.recommender.data_loader import load_processed_data
+from recommendation_engine.recommender.data_loader import DataManager
 from recommendation_engine.recommender.content_based_model import prepare_features
 
 # For testing 
@@ -14,7 +14,7 @@ from recommendation_engine.recommender.content_based_model import prepare_featur
 # from content_based_model import prepare_features
 
 
-users_df, destinations_df, past_destinations_df = load_processed_data()
+users_df, destinations_df, past_destinations_df = DataManager.refresh()
 # Check available columns
 # print("Columns in destinations_df:", destinations_df.columns)
 
