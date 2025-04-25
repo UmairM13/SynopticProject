@@ -112,30 +112,25 @@ async def logout(db: Session = Depends(get_db),
 
 
 @router.patch("/{user_id}")
-async def update_user(
-    user_id: int, 
-    request:Request, 
-    db: Session = Depends(get_db),
-    X_Authorization: str = Header(None)
-    ):
-    
-    if not X_Authorization:
-        raise HTTPException(status_code=401, detail="Authorization header missing")
-    
-    user_from_token = user_service.get_user_by_token(db, X_Authorization)
-    if not user_from_token:
-        raise HTTPException(status_code=401, detail="Invalid session token")
-    
-    data = await request.json()
-    
-    user = user_service.update_user(db, user_id, data)
-    
-    return {
-        "id": user.id,
-        "email": user.email,
-        "message": "User updated successfully"
-    }
-    
+def update_user(user_id: int, user_update: dict, db: Session = Depends(get_db)):
+    user = db.query(User).get(user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if "past_destinations" in user_update:
+        existing = user.past_destinations.split(",") if user.past_destinations else []
+        new = [d.strip() for d in user_update["past_destinations"].split(",")]
+        merged = list(set(existing + new))
+        user.past_destinations = ",".join(merged)
+        user_update.pop("past_destinations")
+
+    for key, value in user_update.items():
+        setattr(user, key, value)
+
+    db.commit()
+    db.refresh(user)
+    return user
 
 @router.delete("/")
 def delete_user(
@@ -160,4 +155,11 @@ def update_past_destination(user_id: int, destination_id: int, data: dict, db: S
     if isinstance(updated, dict) and updated.get("error"):
         raise HTTPException(status_code=404, detail=updated["error"])
     return updated
+
+@router.delete("/{user_id}/past-destinations/{destination_id}")
+def delete_past_destination(user_id: int, destination_id: int, db: Session = Depends(get_db)):
+    deleted = user_service.delete_past_destination(db, user_id, destination_id)
+    if isinstance(deleted, dict) and deleted.get("error"):
+        raise HTTPException(status_code=404, detail=deleted["error"])
+    return {"message": "Past destination deleted successfully"}
 

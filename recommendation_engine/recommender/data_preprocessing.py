@@ -24,6 +24,14 @@ def one_hot_encode(df, features):
     encoded.columns = ohe.get_feature_names_out(features)
     return encoded, ohe
 
+
+def safe_encode_multi_label(df, column, prefix):
+    if column not in df.columns:
+        print(f"[Warning] Column '{column}' not found in DataFrame. Skipping.")
+        return df, pd.DataFrame(), None
+    return encode_multi_label(df, column, prefix)
+
+
 def scale_numerical(df, num_cols):
     scaler = StandardScaler()
     df[num_cols] = df[num_cols].fillna(df[num_cols].median())
@@ -55,9 +63,9 @@ def run_preprocessing():
     global users_df, destinations_df
 
     # --- Destinations ---
-    destinations_df, climate_encoded, climate_mlb = encode_multi_label(destinations_df, "climate", "climate")
-    destinations_df, terrain_encoded, terrain_mlb = encode_multi_label(destinations_df, "terrain", "terrain")
-    destinations_df, holiday_encoded, holiday_mlb = encode_multi_label(destinations_df, "holiday_type", "holiday_type")
+    destinations_df, climate_encoded, climate_mlb = safe_encode_multi_label(destinations_df, "climate", "climate")
+    destinations_df, terrain_encoded, terrain_mlb = safe_encode_multi_label(destinations_df, "terrain", "terrain")
+    destinations_df, holiday_encoded, holiday_mlb = safe_encode_multi_label(destinations_df, "holiday_type", "holiday_type")
 
     one_hot_features = ["country", "language"]
     one_hot_encoded, ohe = one_hot_encode(destinations_df, one_hot_features)
@@ -109,7 +117,7 @@ def run_preprocessing():
     save_processed(users_df, destinations_df, preprocessors)
 
     # Reload to ensure integrity
-    users_df, destinations_df = load_processed_data()
+    users_df, destinations_df, _ = load_processed_data()
 
     return {"status": "success", "message": "Preprocessing completed and saved."}
 

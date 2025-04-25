@@ -112,3 +112,16 @@ def update_past_destination(db: Session, user_id: int, destination_id: int, upda
     db.commit()
     db.refresh(dest)
     return dest
+
+def delete_past_destination(db: Session, user_id: int, destination_id: int):
+    dest = db.query(PastDestination).filter(
+        PastDestination.user_id == user_id,
+        PastDestination.id == destination_id
+    ).first()
+
+    if not dest:
+        return {"error": "Past destination not found."}
+
+    db.delete(dest)
+    db.commit()
+    return {"message": "Past destination deleted successfully."}
