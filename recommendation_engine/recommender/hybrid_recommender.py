@@ -75,7 +75,7 @@ def compute_past_similarity(destination_name, user_id, features_df, similarity_m
     return np.sum(scores) / np.sum(weights) if weights else 0.0
 
 
-def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.2, weight_similarity=0.45, weight_past=0.2, weight_off_season=0.15):
+def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.2, weight_similarity=0.35, weight_past=0.2, weight_off_season=0.25):
     user = users_df[users_df['id'] == user_id]
     if user.empty:
         return "User ID not found in the database."
@@ -110,13 +110,20 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.2, weight
     # Similarity function based on one-hot encoded columns for climate and terrain and budget comparison
     def calculate_similarity(destination, user):
         def jaccard(set1, set2):
-            if not set1 or not set2:
+            if not set1:  # If preference was 'any'
+                return 1
+            if not set2:
                 return 0
             return len(set1 & set2) / len(set1 | set2)
         
-        climates = set(map(str.strip, user['preferred_climate_original'].values[0].lower().split(',')))
-        terrains = set(map(str.strip, user['preferred_terrain_original'].values[0].lower().split(',')))
-        holidays = set(map(str.strip, user['holiday_type_original'].values[0].lower().split(',')))
+        climates_raw = user['preferred_climate_original'].values[0].lower()
+        climates = set() if "any" in climates_raw else set(map(str.strip, climates_raw.split(',')))
+
+        terrains_raw = user['preferred_terrain_original'].values[0].lower()
+        terrains = set() if "any" in terrains_raw else set(map(str.strip, terrains_raw.split(',')))
+
+        holidays_raw = user['holiday_type_original'].values[0].lower()
+        holidays = set() if "any" in holidays_raw else set(map(str.strip, holidays_raw.split(',')))
 
         dest_climates = {col.split('_', 1)[1].lower() for col in destination.index if col.startswith("climate_") and destination[col] == 1}
         dest_terrains = {col.split('_', 1)[1].lower() for col in destination.index if col.startswith("terrain_") and destination[col] == 1}
@@ -171,7 +178,7 @@ def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.2, weight
             'similarity_score': normalized_similarity,
             'content_score': content_score,
             'off_season_score': off_season_score,
-            'avg_daily_budget': destination['avg_daily_budget'],
+            'avg_daily_budget': destination['avg_daily_budget_original'],
             'is_off_season': "Yes" if off_season_score > 0.5 else "No",
             'id': destination['id']
         })
@@ -203,9 +210,9 @@ def clean_explanation(explanation):
     
 def explain_recommendation(destination_id, user_id, 
                            weight_kNN=0.2, 
-                           weight_similarity=0.45, 
+                           weight_similarity=0.35, 
                            weight_past=0.2, 
-                           weight_off_season=0.15):
+                           weight_off_season=0.25):
     """Provide enhanced explanation for a specific destination recommendation."""
     user = users_df[users_df['id'] == user_id]
     destination_row = destinations_df[destinations_df['id'] == destination_id]
@@ -222,27 +229,49 @@ def explain_recommendation(destination_id, user_id,
     }
 
     # Setup sets for preference comparison
-    user_climates = set(map(str.lower, map(str.strip, user['preferred_climate_original'].values[0].split(','))))
-    user_terrains = set(map(str.lower, map(str.strip, user['preferred_terrain_original'].values[0].split(','))))
-    user_holidays = set(map(str.lower, map(str.strip, user['holiday_type_original'].values[0].split(','))))
+    climate_raw = user['preferred_climate_original'].values[0].lower()
+    if "any" in climate_raw:
+        user_climates = set()
+        climate_display = ["any (matches all)"]
+    else:
+        user_climates = set(map(str.strip, climate_raw.split(',')))
+        climate_display = list(user_climates)
+    
+    terrain_raw = user['preferred_terrain_original'].values[0].lower()
+    if "any" in terrain_raw:
+        user_terrains = set()
+        terrain_display = ["any (matches all)"]
+    else:
+        user_terrains = set(map(str.strip, terrain_raw.split(',')))
+        terrain_display = list(user_terrains)
 
+    holidays_raw = user['holiday_type_original'].values[0].lower()
+    if "any" in holidays_raw:
+        user_holidays = set()
+        holiday_display = ["any (matches all)"]
+    else:
+        user_holidays = set(map(str.strip, holidays_raw.split(',')))
+        holiday_display = list(user_holidays)
+        
     dest_climates = {col.split('_', 1)[1].lower() for col in destination.index if col.startswith("climate_") and destination[col] == 1}
     dest_terrains = {col.split('_', 1)[1].lower() for col in destination.index if col.startswith("terrain_") and destination[col] == 1}
     dest_holidays = {col.replace("holiday_type_", "").strip().lower() for col in destination.index if col.startswith("holiday_type_") and destination[col] == 1}
 
     # Helper: Jaccard similarity
     def jaccard(set1, set2):
-        if not set1 or not set2:
+        if not set1:  # If preference was 'any'
+            return 1
+        if not set2:
             return 0
         return len(set1 & set2) / len(set1 | set2)
 
     # Climate
     climate_overlap = user_climates & dest_climates
     explanation["details"]["climate"] = {
-        "user_preference": list(user_climates),
+        "user_preference": climate_display,
         "destination_climates": list(dest_climates),
         "matches": list(climate_overlap),
-        "mismatches": list(user_climates - climate_overlap)
+        "mismatches": list(user_climates - climate_overlap) if user_climates else []
     }
     if climate_overlap:
         explanation["match_summary"].append("climate_match")
@@ -250,10 +279,10 @@ def explain_recommendation(destination_id, user_id,
     # Terrain
     terrain_overlap = user_terrains & dest_terrains
     explanation["details"]["terrain"] = {
-        "user_preference": list(user_terrains),
+        "user_preference": terrain_display,
         "destination_terrains": list(dest_terrains),
         "matches": list(terrain_overlap),
-        "mismatches": list(user_terrains - terrain_overlap)
+        "mismatches": list(user_terrains - terrain_overlap) if user_terrains else []
     }
     if terrain_overlap:
         explanation["match_summary"].append("terrain_match")
@@ -261,10 +290,10 @@ def explain_recommendation(destination_id, user_id,
     # Holiday type
     holiday_overlap = user_holidays & dest_holidays
     explanation["details"]["holiday_type"] = {
-        "user_preference": list(user_holidays),
+        "user_preference": holiday_display,
         "destination_holiday_types": list(dest_holidays),
         "matches": list(holiday_overlap),
-        "mismatches": list(user_holidays - holiday_overlap)
+        "mismatches": list(user_holidays - holiday_overlap) if user_holidays else []
     }
     if holiday_overlap:
         explanation["match_summary"].append("holiday_type_match")
