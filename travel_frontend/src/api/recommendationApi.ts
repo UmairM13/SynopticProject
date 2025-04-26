@@ -1,7 +1,7 @@
 const BASE_URL = "http://localhost:8000/travel/api";
 
-export const fetchRecommendations = async (token: string) => {
-  const response = await fetch(`${BASE_URL}/recommendations`, {
+export const fetchRecommendations = async (token: string, user_id: string) => {
+  const response = await fetch(`${BASE_URL}/recommendations/${user_id}`, {
     headers: {
       "X-Authorization": token,
     },
@@ -31,10 +31,11 @@ export const saveRecommendation = async (
 
 export const fetchExplanation = async (
   token: string,
+  user_id: string,
   destination_id: number
 ) => {
   const response = await fetch(
-    `${BASE_URL}/recommendations/explain/${destination_id}`,
+    `${BASE_URL}/recommendations/explanation/${user_id}/${destination_id}`,
     {
       headers: {
         "X-Authorization": token,
