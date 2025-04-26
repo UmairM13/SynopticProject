@@ -24,33 +24,33 @@ cursor = connection.cursor()
 # Insert dummy data into destinations
 cursor.execute("""
     INSERT INTO destinations (
-        name, country, off_season_start, off_season_end, avg_daily_budget, currency,
-        climate, terrain, language, safety_rating, holiday_type
+    name, country, off_season_start, off_season_end, avg_daily_budget, currency,
+    climate, terrain, language, safety_rating, holiday_type, IATA_code
     ) VALUES
-    ('Paris', 'France', 'November', 'February', 100.00, 'EUR', 'Temperate', 'Urban', 'French', 4.5, 'Romantic,Cultural'),
-('Bali', 'Indonesia', 'May', 'October', 50.00, 'IDR', 'Tropical,Humid', 'Beach,Jungle', 'Indonesian', 4.7, 'Relaxed,Romantic'),
-('Tokyo', 'Japan', 'December', 'February', 120.00, 'JPY', 'Temperate,Humid', 'Urban', 'Japanese', 4.3, 'Solo,Cultural'),
-('Cape Town', 'South Africa', 'April', 'September', 80.00, 'ZAR', 'Mediterranean', 'Mountain,Coastal', 'English', 4.8, 'Adventurous,Nature'),
-('Victoria Falls', 'Zimbabwe', 'March', 'June', 60.00, 'USD', 'Tropical,Humid', 'River,Jungle', 'English', 4.6, 'Adventurous,Nature'),
-('New York', 'USA', 'January', 'March', 150.00, 'USD', 'Temperate', 'Urban', 'English', 4.7, 'Shopping,Solo'),
-('Rome', 'Italy', 'November', 'February', 90.00, 'EUR', 'Mediterranean', 'Urban', 'Italian', 4.4, 'Cultural,Romantic'),
-('Santorini', 'Greece', 'October', 'April', 110.00, 'EUR', 'Mediterranean', 'Beach,Valley', 'Greek', 4.8, 'Romantic,Relaxed'),
-('Sydney', 'Australia', 'May', 'August', 130.00, 'AUD', 'Temperate', 'Urban,Coastal', 'English', 4.7, 'Family,Adventurous'),
-('Reykjavik', 'Iceland', 'October', 'March', 140.00, 'ISK', 'Polar', 'Urban,Mountain', 'Icelandic', 4.5, 'Nature,Adventurous'),
-('Dubai', 'UAE', 'May', 'September', 200.00, 'AED', 'Arid', 'Urban', 'Arabic', 4.6, 'Luxury,Shopping'),
-('Bangkok', 'Thailand', 'June', 'October', 70.00, 'THB', 'Tropical,Humid', 'Urban', 'Thai', 4.3, 'Cultural,Party'),
-('Moscow', 'Russia', 'November', 'March', 75.00, 'RUB', 'Polar', 'Urban', 'Russian', 4.2, 'Cultural'),
-('Rio de Janeiro', 'Brazil', 'April', 'September', 80.00, 'BRL', 'Sub-Tropical,Coastal', 'Beach,Urban', 'Portuguese', 4.5, 'Party,Adventurous'),
-('Los Angeles', 'USA', 'January', 'April', 140.00, 'USD', 'Mediterranean', 'Urban,Beach', 'English', 4.6, 'Relaxed,Shopping'),
-('Cairo', 'Egypt', 'June', 'September', 60.00, 'EGP', 'Arid', 'Urban,Desert', 'Arabic', 4.1, 'Cultural,Adventurous'),
-('London', 'UK', 'November', 'March', 130.00, 'GBP', 'Temperate', 'Urban', 'English', 4.7, 'Cultural,Solo'),
-('Seoul', 'South Korea', 'December', 'February', 90.00, 'KRW', 'Temperate', 'Urban,Mountain', 'Korean', 4.5, 'Cultural'),
-('Madrid', 'Spain', 'October', 'February', 100.00, 'EUR', 'Mediterranean', 'Urban', 'Spanish', 4.6, 'Cultural'),
-('Toronto', 'Canada', 'December', 'March', 110.00, 'CAD', 'Polar', 'Urban,River', 'English', 4.4, 'Family'),
-('Norwegian Fjords', 'Norway', 'October', 'March', 150.00, 'NOK', 'Polar,Coastal', 'Mountain,River', 'Norwegian', 4.7, 'Nature,Relaxed'),
-('Amazon Lodge', 'Brazil', 'April', 'November', 90.00, 'BRL', 'Tropical,Humid', 'Jungle,River', 'Portuguese', 4.2, 'Adventurous,Nature'),
-('Sahara Camp', 'Morocco', 'June', 'August', 70.00, 'MAD', 'Arid', 'Desert', 'Arabic', 4.4, 'Adventurous,Cultural'),
-('Swiss Alps', 'Switzerland', 'June', 'September', 180.00, 'CHF', 'Alpine,Temperate', 'Mountain,Valley', 'German', 4.8, 'Luxury,Family');
+    ('Paris', 'France', 'November', 'February', 100.00, 'EUR', 'Temperate', 'Urban', 'French', 4.5, 'Romantic,Cultural', 'PAR'),
+    ('Bali', 'Indonesia', 'May', 'October', 50.00, 'IDR', 'Tropical,Humid', 'Beach,Jungle', 'Indonesian', 4.7, 'Relaxed,Romantic', 'DPS'),
+    ('Tokyo', 'Japan', 'December', 'February', 120.00, 'JPY', 'Temperate,Humid', 'Urban', 'Japanese', 4.3, 'Solo,Cultural', 'TYO'),
+    ('Cape Town', 'South Africa', 'April', 'September', 80.00, 'ZAR', 'Mediterranean', 'Mountain,Coastal', 'English', 4.8, 'Adventurous,Nature', 'CPT'),
+    ('Victoria Falls', 'Zimbabwe', 'March', 'June', 60.00, 'USD', 'Tropical,Humid', 'River,Jungle', 'English', 4.6, 'Adventurous,Nature', 'VFA'),
+    ('New York', 'USA', 'January', 'March', 150.00, 'USD', 'Temperate', 'Urban', 'English', 4.7, 'Shopping,Solo', 'NYC'),
+    ('Rome', 'Italy', 'November', 'February', 90.00, 'EUR', 'Mediterranean', 'Urban', 'Italian', 4.4, 'Cultural,Romantic', 'ROM'),
+    ('Santorini', 'Greece', 'October', 'April', 110.00, 'EUR', 'Mediterranean', 'Beach,Valley', 'Greek', 4.8, 'Romantic,Relaxed', 'JTR'),
+    ('Sydney', 'Australia', 'May', 'August', 130.00, 'AUD', 'Temperate', 'Urban,Coastal', 'English', 4.7, 'Family,Adventurous', 'SYD'),
+    ('Reykjavik', 'Iceland', 'October', 'March', 140.00, 'ISK', 'Polar', 'Urban,Mountain', 'Icelandic', 4.5, 'Nature,Adventurous', 'REK'),
+    ('Dubai', 'UAE', 'May', 'September', 200.00, 'AED', 'Arid', 'Urban', 'Arabic', 4.6, 'Luxury,Shopping', 'DXB'),
+    ('Bangkok', 'Thailand', 'June', 'October', 70.00, 'THB', 'Tropical,Humid', 'Urban', 'Thai', 4.3, 'Cultural,Party', 'BKK'),
+    ('Moscow', 'Russia', 'November', 'March', 75.00, 'RUB', 'Polar', 'Urban', 'Russian', 4.2, 'Cultural', 'MOW'),
+    ('Rio de Janeiro', 'Brazil', 'April', 'September', 80.00, 'BRL', 'Sub-Tropical,Coastal', 'Beach,Urban', 'Portuguese', 4.5, 'Party,Adventurous', 'RIO'),
+    ('Los Angeles', 'USA', 'January', 'April', 140.00, 'USD', 'Mediterranean', 'Urban,Beach', 'English', 4.6, 'Relaxed,Shopping', 'LAX'),
+    ('Cairo', 'Egypt', 'June', 'September', 60.00, 'EGP', 'Arid', 'Urban,Desert', 'Arabic', 4.1, 'Cultural,Adventurous', 'CAI'),
+    ('London', 'UK', 'November', 'March', 130.00, 'GBP', 'Temperate', 'Urban', 'English', 4.7, 'Cultural,Solo', 'LON'),
+    ('Seoul', 'South Korea', 'December', 'February', 90.00, 'KRW', 'Temperate', 'Urban,Mountain', 'Korean', 4.5, 'Cultural', 'SEL'),
+    ('Madrid', 'Spain', 'October', 'February', 100.00, 'EUR', 'Mediterranean', 'Urban', 'Spanish', 4.6, 'Cultural', 'MAD'),
+    ('Toronto', 'Canada', 'December', 'March', 110.00, 'CAD', 'Polar', 'Urban,River', 'English', 4.4, 'Family', 'YTO'),
+    ('Norwegian Fjords', 'Norway', 'October', 'March', 150.00, 'NOK', 'Polar,Coastal', 'Mountain,River', 'Norwegian', 4.7, 'Nature,Relaxed', 'BGO'), -- Bergen Airport, best match
+    ('Amazon Lodge', 'Brazil', 'April', 'November', 90.00, 'BRL', 'Tropical,Humid', 'Jungle,River', 'Portuguese', 4.2, 'Adventurous,Nature', 'MAO'), -- Manaus Airport
+    ('Sahara Camp', 'Morocco', 'June', 'August', 70.00, 'MAD', 'Arid', 'Desert', 'Arabic', 4.4, 'Adventurous,Cultural', 'RAK'), -- Marrakesh Airport (closest for desert tours)
+    ('Swiss Alps', 'Switzerland', 'June', 'September', 180.00, 'CHF', 'Alpine,Temperate', 'Mountain,Valley', 'German', 4.8, 'Luxury,Family', 'ZRH'); -- Zurich Airport
 """)
 
 connection.commit()

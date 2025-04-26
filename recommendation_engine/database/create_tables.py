@@ -35,7 +35,8 @@ cursor.execute("""
         terrain VARCHAR(100),
         language VARCHAR(100),
         safety_rating DECIMAL(3,2),
-        holiday_type VARCHAR(100)
+        holiday_type VARCHAR(100),
+        IATA_code VARCHAR(10),
     );
 """)
 
