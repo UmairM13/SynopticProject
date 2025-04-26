@@ -73,7 +73,8 @@ destinations_df.fillna({
     "currency": "Unknown",
     "climate": "Unknown",
     "terrain": "Unknown",
-    "language": "Unknown"
+    "language": "Unknown",
+    "IATA_code": "XXX"
 }, inplace=True)
 
 # ===================== TRAVEL COSTS =====================

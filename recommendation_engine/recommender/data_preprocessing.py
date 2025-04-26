@@ -45,24 +45,36 @@ def save_processed(users_df, destinations_df, preprocessors):
     path = os.path.join(os.path.dirname(__file__), "processed_data")
     os.makedirs(path, exist_ok=True)
 
+    # Delete all old files first
     for file in os.listdir(path):
-        os.remove(os.path.join(path, file))
+        file_path = os.path.join(path, file)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
 
+    # Save fresh
     with open(os.path.join(path, "preprocessors.pkl"), "wb") as f:
         pickle.dump(preprocessors, f)
 
     users_df.to_pickle(os.path.join(path, "processed_users.pkl"))
     destinations_df.to_pickle(os.path.join(path, "processed_destinations.pkl"))
+    past_destinations_df.to_pickle(os.path.join(path, "processed_past_destinations.pkl"))
 
+    # also save CSVs for easier debugging
     users_df.to_csv(os.path.join(path, "processed_users.csv"), index=False)
     destinations_df.to_csv(os.path.join(path, "processed_destinations.csv"), index=False)
-    
-    past_destinations_df.to_pickle(os.path.join(path, "processed_past_destinations.pkl"))
     past_destinations_df.to_csv(os.path.join(path, "processed_past_destinations.csv"), index=False)
 
-def run_preprocessing():
-    global users_df, destinations_df
 
+def run_preprocessing():
+    global users_df, destinations_df, past_destinations_df
+
+    from recommendation_engine.recommender.data_collection import users_df as fresh_users_df, destinations_df as fresh_destinations_df, past_destinations_df as fresh_past_destinations_df
+
+    users_df = fresh_users_df.copy()
+    destinations_df = fresh_destinations_df.copy()
+    past_destinations_df = fresh_past_destinations_df.copy()
+    
+    
     # --- Destinations ---
     destinations_df, climate_encoded, climate_mlb = safe_encode_multi_label(destinations_df, "climate", "climate")
     destinations_df, terrain_encoded, terrain_mlb = safe_encode_multi_label(destinations_df, "terrain", "terrain")
@@ -96,8 +108,7 @@ def run_preprocessing():
         user_terrain_encoded,
         user_holiday_encoded
     ], axis=1)
-    
-    
+
     # --- Past Destinations ---
     past_destinations_df["trip_end_date"] = pd.to_datetime(past_destinations_df["trip_end_date"], errors='coerce')
     past_destinations_df.dropna(subset=["trip_end_date", "destination_name"], inplace=True)
@@ -117,11 +128,17 @@ def run_preprocessing():
 
     save_processed(users_df, destinations_df, preprocessors)
 
-    # Reload to ensure integrity
-    DataManager.get_instance().refresh()
-
-
-    return {"status": "success", "message": "Preprocessing completed and saved."}
-
+    # 🚀 Then reload DataManager cache clean again
+    data_manager = DataManager.get_instance()
+    data_manager.refresh()
+    return {
+        "status": "success",
+        "message": "Preprocessing completed and saved.",
+        "users_loaded": len(data_manager.get_users()),
+        "destinations_loaded": len(data_manager.get_destinations())
+    }
+    
+    
 if __name__ == "__main__":
+    
     print(run_preprocessing())
