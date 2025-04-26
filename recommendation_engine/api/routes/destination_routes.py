@@ -54,6 +54,7 @@ def get_user(destination_id: int, db: Session = Depends(get_db)):
             "off_season_end": destination.off_season_end,
             "climate": destination.climate,
             "terrain": destination.terrain,
+            "holiday_type": destination.holiday_type,
             "avg_daily_budget": destination.avg_daily_budget,
             "currency": destination.currency,
             "language": destination.language,
