@@ -14,7 +14,10 @@ from recommendation_engine.recommender.content_based_model import prepare_featur
 # from content_based_model import prepare_features
 
 
-users_df, destinations_df, past_destinations_df = DataManager.refresh()
+data_manager = DataManager.get_instance()
+users_df = data_manager.get_users()
+destinations_df = data_manager.get_destinations()
+past_destinations_df = data_manager.get_past_destinations()
 # Check available columns
 # print("Columns in destinations_df:", destinations_df.columns)
 
