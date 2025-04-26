@@ -8,20 +8,24 @@ import {
   Card,
   ListGroup,
   Alert,
+  Modal,
+  Dropdown,
 } from "react-bootstrap";
 import {
   fetchPastDestinations,
   addPastDestination,
   addPastDestinationToUser,
+  updatePastDestination,
+  deletePastDestination,
 } from "../api/UserApi";
 
 interface PastDestination {
   id: number;
   destination_name: string;
-  trip_start_date: string;
-  trip_end_date: string;
-  rating: number;
-  notes?: string;
+  trip_start_date: string | null;
+  trip_end_date: string | null;
+  rating: string;
+  notes?: string | null;
 }
 
 const UserProfile = () => {
@@ -35,8 +39,11 @@ const UserProfile = () => {
     rating: "",
     notes: "",
   });
+  const [editDestination, setEditDestination] =
+    useState<PastDestination | null>(null);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [showModal, setShowModal] = useState(false);
 
   const userId = localStorage.getItem("id");
 
@@ -46,14 +53,28 @@ const UserProfile = () => {
     setNewDestination({ ...newDestination, [e.target.name]: e.target.value });
   };
 
+  const handleModalChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    if (!editDestination) return;
+    setEditDestination({ ...editDestination, [e.target.name]: e.target.value });
+  };
+
   const handleSubmit = async () => {
     setError("");
     setSuccess("");
 
-    try {
-      const newEntry = await addPastDestination(userId!, newDestination);
-      setPastDestinations([...pastDestinations, newEntry]);
+    const cleaned = {
+      destination_name: newDestination.destination_name,
+      trip_start_date: newDestination.trip_start_date.trim() || null,
+      trip_end_date: newDestination.trip_end_date.trim() || null,
+      rating: newDestination.rating,
+      notes: newDestination.notes.trim() || null,
+    };
 
+    try {
+      const newEntry = await addPastDestination(userId!, cleaned);
+      setPastDestinations([...pastDestinations, newEntry]);
       setSuccess("Destination added!");
       setNewDestination({
         destination_name: "",
@@ -62,14 +83,53 @@ const UserProfile = () => {
         rating: "",
         notes: "",
       });
-
-      const newEntryForUser = await addPastDestinationToUser(
-        userId!,
-        newDestination.destination_name
-      );
-      console.log("New entry added to user:", newEntryForUser);
-    } catch (err) {
+      await addPastDestinationToUser(userId!, cleaned.destination_name);
+    } catch {
       setError("An error occurred while adding your destination.");
+    }
+  };
+
+  const handleEdit = (destination: PastDestination) => {
+    setEditDestination(destination);
+    setShowModal(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!editDestination || !userId) return;
+    try {
+      const payload = {
+        destination_name: editDestination.destination_name,
+        trip_start_date: editDestination.trip_start_date?.trim() || null,
+        trip_end_date: editDestination.trip_end_date?.trim() || null,
+        rating: editDestination.rating,
+        notes: editDestination.notes?.trim() || null,
+      };
+
+      await updatePastDestination(userId, editDestination.id, payload);
+
+      // Update in frontend
+      setPastDestinations((prev) =>
+        prev.map((d) =>
+          d.id === editDestination.id ? { ...d, ...payload } : d
+        )
+      );
+
+      // Append to user's past_destinations string field
+      await addPastDestinationToUser(userId, payload.destination_name);
+      setShowModal(false);
+      setSuccess("Destination updated!");
+    } catch {
+      setError("Failed to update destination.");
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deletePastDestination(userId!, id);
+      setPastDestinations(pastDestinations.filter((dest) => dest.id !== id));
+      setSuccess("Destination deleted!");
+    } catch {
+      setError("An error occurred while deleting the destination.");
     }
   };
 
@@ -79,18 +139,16 @@ const UserProfile = () => {
       try {
         const data = await fetchPastDestinations(userId);
         setPastDestinations(data);
-      } catch (e) {
+      } catch {
         console.error("Failed to load past destinations");
       }
     };
-
     loadPastDestinations();
   }, [userId]);
 
   return (
     <Container className="mt-5">
       <h2 className="text-center mb-4">Your Profile</h2>
-
       <Row>
         <Col md={6}>
           <Card className="mb-4">
@@ -109,7 +167,6 @@ const UserProfile = () => {
                     required
                   />
                 </Form.Group>
-
                 <Form.Group className="mb-2">
                   <Form.Label>Trip Start Date</Form.Label>
                   <Form.Control
@@ -119,7 +176,6 @@ const UserProfile = () => {
                     onChange={handleChange}
                   />
                 </Form.Group>
-
                 <Form.Group className="mb-2">
                   <Form.Label>Trip End Date</Form.Label>
                   <Form.Control
@@ -129,32 +185,26 @@ const UserProfile = () => {
                     onChange={handleChange}
                   />
                 </Form.Group>
-
                 <Form.Group className="mb-2">
-                  <Form.Label>Rating (0.0 - 5.0)</Form.Label>
+                  <Form.Label>Rating</Form.Label>
                   <Form.Control
                     type="number"
                     step="0.1"
-                    min="0"
-                    max="5"
                     name="rating"
                     value={newDestination.rating}
                     onChange={handleChange}
-                    required
                   />
                 </Form.Group>
-
                 <Form.Group className="mb-3">
                   <Form.Label>Notes</Form.Label>
                   <Form.Control
                     as="textarea"
-                    rows={3}
                     name="notes"
                     value={newDestination.notes}
                     onChange={handleChange}
+                    rows={3}
                   />
                 </Form.Group>
-
                 <Button className="btn-accent w-100" onClick={handleSubmit}>
                   Add Destination
                 </Button>
@@ -168,21 +218,125 @@ const UserProfile = () => {
             <Card.Body>
               <Card.Title>Previously Visited</Card.Title>
               <ListGroup variant="flush">
-                {pastDestinations.map((dest) => (
-                  <ListGroup.Item key={dest.id}>
-                    <strong>{dest.destination_name}</strong> ({dest.rating}/5)
-                    <br />
-                    {dest.trip_start_date} – {dest.trip_end_date}
-                    {dest.notes && (
-                      <p className="mb-0 mt-1 text-muted">{dest.notes}</p>
-                    )}
-                  </ListGroup.Item>
-                ))}
+                {[...pastDestinations]
+                  .sort((a, b) => {
+                    const dateA = a.trip_end_date || a.trip_start_date;
+                    const dateB = b.trip_end_date || b.trip_start_date;
+
+                    if (!dateA && !dateB) return 0; // Both missing
+                    if (!dateA) return 1; // A has no date → lower
+                    if (!dateB) return -1; // B has no date → lower
+
+                    return (
+                      new Date(dateB).getTime() - new Date(dateA).getTime()
+                    ); // Most recent first
+                  })
+                  .map((dest) => (
+                    <ListGroup.Item
+                      key={dest.id}
+                      className="d-flex justify-content-between align-items-start"
+                    >
+                      <div>
+                        <strong>{dest.destination_name}</strong> ({dest.rating}
+                        /5)
+                        <br />
+                        {dest.trip_start_date} – {dest.trip_end_date}
+                        {dest.notes && (
+                          <p className="mb-0 mt-1 text-muted">{dest.notes}</p>
+                        )}
+                      </div>
+                      <Dropdown align="end">
+                        <Dropdown.Toggle
+                          variant="light"
+                          size="sm"
+                          className="border-0"
+                        >
+                          <i className="bi bi-three-dots-vertical"></i>
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => handleEdit(dest)}>
+                            Edit
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            onClick={() => handleDelete(dest.id)}
+                            className="text-danger"
+                          >
+                            Delete
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </ListGroup.Item>
+                  ))}
               </ListGroup>
             </Card.Body>
           </Card>
         </Col>
       </Row>
+
+      {/* Edit Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Destination</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {editDestination && (
+            <Form>
+              <Form.Group className="mb-2">
+                <Form.Label>Destination Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="destination_name"
+                  value={editDestination.destination_name}
+                  onChange={handleModalChange}
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Trip Start Date</Form.Label>
+                <Form.Control
+                  type="date"
+                  name="trip_start_date"
+                  value={editDestination.trip_start_date || ""}
+                  onChange={handleModalChange}
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Trip End Date</Form.Label>
+                <Form.Control
+                  type="date"
+                  name="trip_end_date"
+                  value={editDestination.trip_end_date || ""}
+                  onChange={handleModalChange}
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Rating</Form.Label>
+                <Form.Control
+                  type="number"
+                  name="rating"
+                  step="0.1"
+                  min="0"
+                  max="5"
+                  value={editDestination.rating}
+                  onChange={handleModalChange}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Notes</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  name="notes"
+                  rows={3}
+                  value={editDestination.notes || ""}
+                  onChange={handleModalChange}
+                />
+              </Form.Group>
+              <Button onClick={handleUpdate} className="w-100">
+                Save Changes
+              </Button>
+            </Form>
+          )}
+        </Modal.Body>
+      </Modal>
     </Container>
   );
 };

@@ -106,10 +106,10 @@ export const addPastDestination = async (
   userId: string,
   newDestination: {
     destination_name: string;
-    trip_start_date?: string;
-    trip_end_date?: string;
+    trip_start_date?: string | null;
+    trip_end_date?: string | null;
     rating: string;
-    notes?: string;
+    notes?: string | null;
   }
 ) => {
   const res = await fetch(`${API_URL}/users/${userId}/past-destinations`, {
@@ -128,8 +128,31 @@ export const addPastDestination = async (
 
 export const addPastDestinationToUser = async (
   userId: string,
-  destination_name: string
+  newDestinationName: string
 ) => {
+  // First: get the current user
+  const userRes = await fetch(`${API_URL}/users/${userId}`, {
+    headers: {
+      "X-Authorization": localStorage.getItem("session_token") || "",
+    },
+  });
+
+  if (!userRes.ok) {
+    throw new Error("Failed to fetch user data");
+  }
+
+  const user = await userRes.json();
+
+  // Parse existing destinations and avoid duplicates
+  const current =
+    user.past_destinations?.split(",").map((s: string) => s.trim()) || [];
+  if (current.includes(newDestinationName)) {
+    return user; // Already added — no need to update
+  }
+
+  const updated = [...current, newDestinationName].join(", ");
+
+  // Now update the user with the full updated string
   const res = await fetch(`${API_URL}/users/${userId}`, {
     method: "PATCH",
     headers: {
@@ -137,13 +160,14 @@ export const addPastDestinationToUser = async (
       "X-Authorization": localStorage.getItem("session_token") || "",
     },
     body: JSON.stringify({
-      past_destinations: destination_name,
+      past_destinations: updated,
     }),
   });
 
   if (!res.ok) {
-    throw new Error("Failed to add past destination to user");
+    throw new Error("Failed to update user past destinations");
   }
+
   return await res.json();
 };
 
@@ -153,6 +177,51 @@ export const getUserById = async (userId: string) => {
   });
   if (!res.ok) {
     throw new Error("Failed to fetch user data");
+  }
+  return await res.json();
+};
+
+export const updatePastDestination = async (
+  userId: string,
+  destinationId: number,
+  updatedDestination: {
+    destination_name?: string;
+    trip_start_date?: string | null;
+    trip_end_date?: string | null;
+    rating?: string;
+    notes?: string | null;
+  }
+) => {
+  const res = await fetch(
+    `${API_URL}/users/${userId}/past-destinations/${destinationId}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedDestination),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to update past destination");
+  }
+  return await res.json();
+};
+
+export const deletePastDestination = async (
+  userId: string,
+  destinationId: number
+) => {
+  const res = await fetch(
+    `${API_URL}/users/${userId}/past-destinations/${destinationId}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to delete past destination");
   }
   return await res.json();
 };

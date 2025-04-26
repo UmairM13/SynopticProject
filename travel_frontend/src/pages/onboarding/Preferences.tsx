@@ -47,8 +47,8 @@ const Preferences = () => {
           preferred_climate: user.preferred_climate?.split(",") || [],
           holiday_type: user.holiday_type?.split(",") || [],
           budget: user.budget?.toString() || "",
-          trip_start_date: user.trip_start_date || "",
-          trip_end_date: user.trip_end_date || "",
+          trip_start_date: user.trip_start_date || null,
+          trip_end_date: user.trip_end_date || null,
         });
       } catch (err) {
         setError("Failed to load user preferences.");

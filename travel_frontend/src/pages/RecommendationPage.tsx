@@ -7,11 +7,11 @@ import {
   fetchRecommendations,
   saveRecommendation,
   fetchExplanation,
-} from "../api/recommendationApi";
+} from "../api/RecommendationApi";
 
 interface Recommendation {
   id: number;
-  destination_name: string;
+  name: string;
   country: string;
   avg_daily_budget: number;
   is_off_season: string;
@@ -28,8 +28,9 @@ const RecommendationPage = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const token = localStorage.getItem("token") || "";
-        const data = await fetchRecommendations(token);
+        const token = localStorage.getItem("session_token") || "";
+        const userId = localStorage.getItem("id") || "";
+        const data = await fetchRecommendations(token, userId);
         setRecommendations(data);
       } catch (err: any) {
         setError(err.message);
@@ -43,9 +44,9 @@ const RecommendationPage = () => {
   const handleSave = async (rec: Recommendation) => {
     try {
       await saveRecommendation(
-        localStorage.getItem("token") || "",
+        localStorage.getItem("session_token") || "",
         rec.id,
-        rec.destination_name
+        rec.name
       );
       alert("Saved!");
     } catch (err) {
@@ -54,17 +55,19 @@ const RecommendationPage = () => {
   };
 
   const handleExplain = async (rec: Recommendation) => {
+    const user_id = localStorage.getItem("id") || "";
     try {
       const data = await fetchExplanation(
-        localStorage.getItem("token") || "",
+        localStorage.getItem("session_token") || "",
+        user_id,
         rec.id
       );
       setExplanationText(data.explanation || "No explanation available.");
-      setSelectedDestination(rec.destination_name);
+      setSelectedDestination(rec.name);
       setShowModal(true);
     } catch (err) {
       setExplanationText("Failed to fetch explanation.");
-      setSelectedDestination(rec.destination_name);
+      setSelectedDestination(rec.name);
       setShowModal(true);
     }
   };
@@ -85,7 +88,8 @@ const RecommendationPage = () => {
           {recommendations.map((rec) => (
             <Col md={4} key={rec.id}>
               <RecommendationCard
-                destinationName={rec.destination_name}
+                destinationId={rec.id}
+                destinationName={rec.name}
                 country={rec.country}
                 budget={rec.avg_daily_budget}
                 isOffSeason={rec.is_off_season === "Yes"}
