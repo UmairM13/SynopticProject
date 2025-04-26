@@ -73,7 +73,11 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
         "nationality": user.nationality,
         "preferred_climate": user.preferred_climate,
         "preferred_terrain": user.preferred_terrain,
-        "budget": user.budget
+        "budget": user.budget,
+        "current_city": user.current_city,
+        "current_country": user.current_country,
+        "trip_start_date": user.trip_start_date,
+        "trip_end_date": user.trip_end_date,
     }
 
 @router.post("/login")

@@ -16,8 +16,9 @@ class Destination(Base):
     holiday_type = Column(String(255))
     language = Column(String(255))
     safety_rating = Column(Integer)
+    IATA_code = Column(String(3))
     
-    def __init__(self, name, country, off_season_start, off_season_end, avg_daily_budget, currency, climate, terrain, holiday_type, language, safety_rating):
+    def __init__(self, name, country, off_season_start, off_season_end, avg_daily_budget, currency, climate, terrain, holiday_type, language, safety_rating, IATA_code):
         self.name = name
         self.country = country
         self.off_season_start = off_season_start
@@ -29,3 +30,4 @@ class Destination(Base):
         self.holiday_type = holiday_type
         self.language = language
         self.safety_rating = safety_rating
+        self.IATA_code = IATA_code

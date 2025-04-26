@@ -35,13 +35,14 @@ def get_all_destinations(db: Session = Depends(get_db)):
                 "currency": destination.currency,
                 "language": destination.language,
                 "safety_rating": destination.safety_rating,
+                "IATA_code": destination.IATA_code,
             } for destination in destinations
         ]
     }
 
 
 @router.get("/{destination_id}")
-def get_user(destination_id: int, db: Session = Depends(get_db)):
+def get_destination(destination_id: int, db: Session = Depends(get_db)):
     destination = destination_service.get_destination(db, destination_id)
     if not destination:
         raise HTTPException(status_code=404, detail="Destination not found")
@@ -59,4 +60,5 @@ def get_user(destination_id: int, db: Session = Depends(get_db)):
             "currency": destination.currency,
             "language": destination.language,
             "safety_rating": destination.safety_rating,
+            "IATA_code": destination.IATA_code,
     }
