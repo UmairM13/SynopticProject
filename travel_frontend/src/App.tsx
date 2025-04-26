@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+// import { useEffect, useRef } from "react";
 import "./App.css";
 import {
   BrowserRouter as Router,
@@ -14,37 +14,38 @@ import RecommendationPage from "./pages/RecommendationPage";
 import UserProfile from "./pages/Notebook";
 import AppNavbar from "./components/AppNavbar";
 import Preferences from "./pages/onboarding/Preferences";
+import DestinationDetailsPage from "./pages/DestinationDetails";
 
-function InactivityLogout() {
-  const navigate = useRef<ReturnType<typeof setTimeout> | null>(null);
+// function InactivityLogout() {
+//   const navigate = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const resetTimer = () => {
-      if (navigate.current) clearTimeout(navigate.current);
-      navigate.current = setTimeout(() => {
-        localStorage.removeItem("session_token");
-        window.location.href = "/login";
-      }, 30 * 60 * 1000); // 30 mins
-    };
+//   useEffect(() => {
+//     const resetTimer = () => {
+//       if (navigate.current) clearTimeout(navigate.current);
+//       navigate.current = setTimeout(() => {
+//         localStorage.removeItem("session_token");
+//         window.location.href = "/login";
+//       }, 30 * 60 * 1000); // 30 mins
+//     };
 
-    const events = ["mousemove", "keydown", "click", "scroll"];
-    events.forEach((event) => window.addEventListener(event, resetTimer));
-    resetTimer();
+//     const events = ["mousemove", "keydown", "click", "scroll"];
+//     events.forEach((event) => window.addEventListener(event, resetTimer));
+//     resetTimer();
 
-    return () => {
-      if (navigate.current) clearTimeout(navigate.current);
-      events.forEach((event) => window.removeEventListener(event, resetTimer));
-    };
-  }, []);
+//     return () => {
+//       if (navigate.current) clearTimeout(navigate.current);
+//       events.forEach((event) => window.removeEventListener(event, resetTimer));
+//     };
+//   }, []);
 
-  return null;
-}
+//   return null;
+// }
 
 function App() {
   return (
     <Router>
       <AppNavbar />
-      <InactivityLogout />
+      {/* <InactivityLogout /> */}
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
@@ -53,7 +54,10 @@ function App() {
         <Route path="/notebook" element={<UserProfile />} />
         <Route path="/recommendations" element={<RecommendationPage />} />
         <Route path="/preferences" element={<Preferences />} />
-
+        <Route
+          path="/destination/:destinationId"
+          element={<DestinationDetailsPage />}
+        />
         {/* Catch-all route for 404 */}
         <Route path="/404" element={<div>Page Not Found</div>} />
         {/* If needed, fallback route */}
