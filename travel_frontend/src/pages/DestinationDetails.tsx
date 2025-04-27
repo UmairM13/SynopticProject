@@ -23,7 +23,6 @@ interface Airport {
   iata_code: string | null;
 }
 
-// Helper to find IATA code
 const findAirportByCity = (cityName: string, countryName?: string) => {
   if (!cityName) return null;
 
@@ -34,7 +33,7 @@ const findAirportByCity = (cityName: string, countryName?: string) => {
     const airportCity = airport.municipality?.toLowerCase();
     const airportCountry = airport.iso_country?.toLowerCase();
     return (
-      airport.iata_code && // Only airports with IATA code
+      airport.iata_code &&
       ((airportCity && airportCity.includes(loweredCity)) ||
         (loweredCountry &&
           airportCountry &&
@@ -51,6 +50,8 @@ const DestinationDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [flights, setFlights] = useState<any[]>([]);
   const [flightsLoading, setFlightsLoading] = useState(true);
+  const [tripStartDate, setTripStartDate] = useState<string | null>(null);
+  const [tripEndDate, setTripEndDate] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -74,6 +75,13 @@ const DestinationDetailsPage = () => {
         };
         setDetails(destinationData);
 
+        const userId = localStorage.getItem("id");
+        if (userId) {
+          const userData = await getUserById(userId);
+          setTripStartDate(userData.trip_start_date || null);
+          setTripEndDate(userData.trip_end_date || null);
+        }
+
         await loadFlights(destinationData.IATACode);
       } catch (err) {
         console.error("Failed to load destination details", err);
@@ -91,13 +99,8 @@ const DestinationDetailsPage = () => {
       if (!userId) throw new Error("User not logged in.");
 
       const userData = await getUserById(userId);
-
       const userCity = userData.current_city;
-
-      //   console.log("Departure", userData.trip_start_date);
       const originIATA = findAirportByCity(userCity, userData.current_country);
-
-      console.log(originIATA, destinationIATA);
 
       if (!originIATA || !destinationIATA) {
         throw new Error("Missing IATA codes for flight search.");
@@ -107,11 +110,7 @@ const DestinationDetailsPage = () => {
         originIATA,
         destinationIATA,
         userData.trip_start_date
-        // "2025-06"
       );
-
-      console.log("Flights:", data);
-
       setFlights(data);
     } catch (error) {
       console.error(error);
@@ -122,8 +121,12 @@ const DestinationDetailsPage = () => {
 
   if (loading) {
     return (
-      <Container className="mt-5 text-center">
-        <Spinner animation="border" />
+      <Container
+        className="d-flex flex-column justify-content-center align-items-center"
+        style={{ minHeight: "70vh" }}
+      >
+        <Spinner animation="border" role="status" />
+        <p className="mt-3">Loading destination details...</p>
       </Container>
     );
   }
@@ -133,7 +136,7 @@ const DestinationDetailsPage = () => {
       <Row>
         {/* Flights Column */}
         <Col md={4}>
-          <Card className="p-3 mb-3 shadow-sm">
+          <Card className="p-3 mb-4 shadow-sm">
             <h5 className="mb-3">Flight Options</h5>
             {flightsLoading ? (
               <Spinner animation="border" size="sm" />
@@ -192,8 +195,8 @@ const DestinationDetailsPage = () => {
                   );
                 })}
 
-                {/* Button to View More Flights */}
-                <div className="d-grid gap-2">
+                {/* View More Flights */}
+                <div className="d-grid gap-2 mt-3">
                   <a
                     href="https://www.skyscanner.net/"
                     target="_blank"
@@ -205,14 +208,24 @@ const DestinationDetailsPage = () => {
                 </div>
               </>
             ) : (
-              <p>No flights found.</p>
+              <div className="text-center">
+                <p>No flights found.</p>
+                <a
+                  href="https://www.skyscanner.net/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline-primary btn-sm mt-2"
+                >
+                  Search on Skyscanner
+                </a>
+              </div>
             )}
           </Card>
         </Col>
 
-        {/* Destination Info Column */}
+        {/* Destination Info + Attractions */}
         <Col md={4}>
-          <Card className="p-4 shadow-sm">
+          <Card className="p-4 mb-4 shadow-sm">
             <h4 className="mb-3">
               {details?.name}, {details?.country}
             </h4>
@@ -232,18 +245,53 @@ const DestinationDetailsPage = () => {
               <strong>Holiday Type:</strong> {details?.holidayType.join(", ")}
             </p>
           </Card>
+
+          {/* Attractions Card */}
+          <Card className="p-3 mb-4 shadow-sm">
+            <h5>Top Attractions</h5>
+            <p>Coming soon... (via TripAdvisor API)</p>
+          </Card>
         </Col>
 
-        {/* Hotels and Attractions Column */}
+        {/* Hotels Card */}
         <Col md={4}>
-          <Card className="p-3 mb-3 shadow-sm">
-            <h5>Top Hotels (Coming soon)</h5>
-            <p>Search using Booking.com API...</p>
-          </Card>
-
-          <Card className="p-3 shadow-sm">
-            <h5>Top Attractions (Coming soon)</h5>
-            <p>Fetch from TripAdvisor API...</p>
+          <Card className="p-3 mb-4 shadow-sm">
+            <h5 className="mb-3">Hotels</h5>
+            <div className="d-grid">
+              {tripStartDate && tripEndDate ? (
+                <a
+                  href={`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(
+                    details?.name || "Destination"
+                  )}&checkin_year=${new Date(
+                    tripStartDate
+                  ).getFullYear()}&checkin_month=${
+                    new Date(tripStartDate).getMonth() + 1
+                  }&checkin_monthday=${new Date(
+                    tripStartDate
+                  ).getDate()}&checkout_year=${new Date(
+                    tripEndDate
+                  ).getFullYear()}&checkout_month=${
+                    new Date(tripEndDate).getMonth() + 1
+                  }&checkout_monthday=${new Date(tripEndDate).getDate()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline-primary"
+                >
+                  Search Hotels in {details?.name}
+                </a>
+              ) : (
+                <a
+                  href={`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(
+                    details?.name || "Destination"
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline-primary"
+                >
+                  Search Hotels in {details?.name}
+                </a>
+              )}
+            </div>
           </Card>
         </Col>
       </Row>

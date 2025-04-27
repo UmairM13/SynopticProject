@@ -18,6 +18,10 @@ import {
   updatePastDestination,
   deletePastDestination,
 } from "../api/UserApi";
+import {
+  fetchSavedRecommendations,
+  deleteSavedRecommendation,
+} from "../api/RecommendationApi";
 
 interface PastDestination {
   id: number;
@@ -44,6 +48,9 @@ const UserProfile = () => {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [savedRecommendations, setSavedRecommendations] = useState<any[]>([]);
+  const [showAllSaved, setShowAllSaved] = useState(false);
+  const [showAllPast, setShowAllPast] = useState(false);
 
   const userId = localStorage.getItem("id");
 
@@ -106,15 +113,11 @@ const UserProfile = () => {
       };
 
       await updatePastDestination(userId, editDestination.id, payload);
-
-      // Update in frontend
       setPastDestinations((prev) =>
         prev.map((d) =>
           d.id === editDestination.id ? { ...d, ...payload } : d
         )
       );
-
-      // Append to user's past_destinations string field
       await addPastDestinationToUser(userId, payload.destination_name);
       setShowModal(false);
       setSuccess("Destination updated!");
@@ -134,22 +137,170 @@ const UserProfile = () => {
   };
 
   useEffect(() => {
-    const loadPastDestinations = async () => {
+    const loadData = async () => {
       if (!userId) return;
       try {
-        const data = await fetchPastDestinations(userId);
-        setPastDestinations(data);
+        const past = await fetchPastDestinations(userId);
+        setPastDestinations(past);
+
+        const saved = await fetchSavedRecommendations(
+          localStorage.getItem("session_token") || ""
+        );
+        setSavedRecommendations(saved);
       } catch {
-        console.error("Failed to load past destinations");
+        console.error("Failed to load profile data");
       }
     };
-    loadPastDestinations();
+    loadData();
   }, [userId]);
 
   return (
     <Container className="mt-5">
       <h2 className="text-center mb-4">Your Profile</h2>
       <Row>
+        <Col md={6}>
+          {/* Saved Recommendations */}
+          <Card className="mb-4 fade-in">
+            <Card.Body>
+              <Card.Title>Saved Recommendations</Card.Title>
+              <ListGroup variant="flush">
+                {savedRecommendations.length === 0 ? (
+                  <ListGroup.Item className="text-muted">
+                    No saved recommendations.
+                  </ListGroup.Item>
+                ) : (
+                  (showAllSaved
+                    ? savedRecommendations
+                    : savedRecommendations.slice(0, 5)
+                  ).map((rec) => (
+                    <ListGroup.Item
+                      key={rec.destination_id}
+                      className="d-flex justify-content-between align-items-start"
+                    >
+                      <div
+                        style={{ cursor: "pointer" }}
+                        onClick={() =>
+                          (window.location.href = `/destination/${rec.destination_id}`)
+                        }
+                      >
+                        <strong>{rec.destination}</strong>
+                        <br />
+                        <small className="text-muted">
+                          Saved on{" "}
+                          {new Date(rec.timestamp).toLocaleDateString()}
+                        </small>
+                      </div>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            await deleteSavedRecommendation(
+                              localStorage.getItem("session_token") || "",
+                              rec.destination_id
+                            );
+                            setSavedRecommendations((prev) =>
+                              prev.filter(
+                                (r) => r.destination_id !== rec.destination_id
+                              )
+                            );
+                          } catch (err) {
+                            console.error(
+                              "Failed to unsave recommendation",
+                              err
+                            );
+                          }
+                        }}
+                      >
+                        Unsave
+                      </Button>
+                    </ListGroup.Item>
+                  ))
+                )}
+              </ListGroup>
+              {savedRecommendations.length > 5 && (
+                <Button
+                  variant="link"
+                  className="mt-2 p-0"
+                  onClick={() => setShowAllSaved(!showAllSaved)}
+                >
+                  {showAllSaved ? "Show Less" : "Show More"}
+                </Button>
+              )}
+            </Card.Body>
+          </Card>
+
+          {/* Past Destinations */}
+          <Card className="fade-in">
+            <Card.Body>
+              <Card.Title>Previously Visited</Card.Title>
+              <ListGroup variant="flush">
+                {(showAllPast
+                  ? [...pastDestinations]
+                  : [...pastDestinations].slice(0, 5)
+                )
+                  .sort((a, b) => {
+                    const dateA = a.trip_end_date || a.trip_start_date;
+                    const dateB = b.trip_end_date || b.trip_start_date;
+                    if (!dateA && !dateB) return 0;
+                    if (!dateA) return 1;
+                    if (!dateB) return -1;
+                    return (
+                      new Date(dateB).getTime() - new Date(dateA).getTime()
+                    );
+                  })
+                  .map((dest) => (
+                    <ListGroup.Item
+                      key={dest.id}
+                      className="d-flex justify-content-between align-items-start"
+                    >
+                      <div>
+                        <strong>{dest.destination_name}</strong> ({dest.rating}
+                        /5)
+                        <br />
+                        {dest.trip_start_date} – {dest.trip_end_date}
+                        {dest.notes && (
+                          <p className="mb-0 mt-1 text-muted">{dest.notes}</p>
+                        )}
+                      </div>
+                      <Dropdown align="end">
+                        <Dropdown.Toggle
+                          variant="light"
+                          size="sm"
+                          className="border-0"
+                        >
+                          <i className="bi bi-three-dots-vertical"></i>
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => handleEdit(dest)}>
+                            Edit
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            onClick={() => handleDelete(dest.id)}
+                            className="text-danger"
+                          >
+                            Delete
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </ListGroup.Item>
+                  ))}
+              </ListGroup>
+              {pastDestinations.length > 5 && (
+                <Button
+                  variant="link"
+                  className="mt-2 p-0"
+                  onClick={() => setShowAllPast(!showAllPast)}
+                >
+                  {showAllPast ? "Show Less" : "Show More"}
+                </Button>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+
+        {/* Form to Add Destination */}
         <Col md={6}>
           <Card className="mb-4">
             <Card.Body>
@@ -200,74 +351,15 @@ const UserProfile = () => {
                   <Form.Control
                     as="textarea"
                     name="notes"
+                    rows={3}
                     value={newDestination.notes}
                     onChange={handleChange}
-                    rows={3}
                   />
                 </Form.Group>
                 <Button className="btn-accent w-100" onClick={handleSubmit}>
                   Add Destination
                 </Button>
               </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={6}>
-          <Card>
-            <Card.Body>
-              <Card.Title>Previously Visited</Card.Title>
-              <ListGroup variant="flush">
-                {[...pastDestinations]
-                  .sort((a, b) => {
-                    const dateA = a.trip_end_date || a.trip_start_date;
-                    const dateB = b.trip_end_date || b.trip_start_date;
-
-                    if (!dateA && !dateB) return 0; // Both missing
-                    if (!dateA) return 1; // A has no date → lower
-                    if (!dateB) return -1; // B has no date → lower
-
-                    return (
-                      new Date(dateB).getTime() - new Date(dateA).getTime()
-                    ); // Most recent first
-                  })
-                  .map((dest) => (
-                    <ListGroup.Item
-                      key={dest.id}
-                      className="d-flex justify-content-between align-items-start"
-                    >
-                      <div>
-                        <strong>{dest.destination_name}</strong> ({dest.rating}
-                        /5)
-                        <br />
-                        {dest.trip_start_date} – {dest.trip_end_date}
-                        {dest.notes && (
-                          <p className="mb-0 mt-1 text-muted">{dest.notes}</p>
-                        )}
-                      </div>
-                      <Dropdown align="end">
-                        <Dropdown.Toggle
-                          variant="light"
-                          size="sm"
-                          className="border-0"
-                        >
-                          <i className="bi bi-three-dots-vertical"></i>
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                          <Dropdown.Item onClick={() => handleEdit(dest)}>
-                            Edit
-                          </Dropdown.Item>
-                          <Dropdown.Item
-                            onClick={() => handleDelete(dest.id)}
-                            className="text-danger"
-                          >
-                            Delete
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
-                    </ListGroup.Item>
-                  ))}
-              </ListGroup>
             </Card.Body>
           </Card>
         </Col>

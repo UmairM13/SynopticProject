@@ -9,6 +9,7 @@ interface RecommendationCardProps {
   budget: number;
   onSave?: () => void;
   onExplain?: () => void;
+  isSaved?: boolean;
 }
 
 const RecommendationCard = ({
@@ -19,6 +20,7 @@ const RecommendationCard = ({
   budget,
   onSave,
   onExplain,
+  isSaved,
 }: RecommendationCardProps) => {
   const navigate = useNavigate();
 
@@ -40,6 +42,7 @@ const RecommendationCard = ({
           <strong>Estimated Daily Budget:</strong> £{budget.toFixed(2)} <br />
           <strong>Off-season:</strong> {isOffSeason ? "Yes" : "No"}
         </Card.Text>
+
         <div className="d-flex justify-content-between">
           <Button
             variant="outline-primary"
@@ -50,14 +53,16 @@ const RecommendationCard = ({
           >
             Why this?
           </Button>
+
+          {/* Save / Unsave Button */}
           <Button
-            variant="success"
+            variant={isSaved ? "success" : "outline-primary"}
             onClick={(e) => {
               e.stopPropagation();
-              onSave?.();
+              onSave?.(); // Save OR Unsave
             }}
           >
-            Save
+            {isSaved ? "Saved ✓" : "Save"}
           </Button>
         </div>
       </Card.Body>
