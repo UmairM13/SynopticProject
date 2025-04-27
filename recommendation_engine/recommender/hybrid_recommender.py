@@ -57,28 +57,61 @@ def compute_past_similarity(destination_name, user_id, features_df, similarity_m
 
     target_index = features_df[features_df["name_lower"] == destination_name].index[0]
     target_pos = features_df.index.get_loc(target_index)
+
     scores = []
     weights = []
 
     for _, row in user_history.iterrows():
         past_name = row["destination_name"].strip().lower()
         trip_end = pd.to_datetime(row["trip_end_date"], errors="coerce")
-        if past_name in features_df["name_lower"].values and pd.notna(trip_end):
-            past_index = features_df[features_df["name_lower"] == past_name].index[0]
+        if not pd.notna(trip_end):
+            continue
+
+        # --- Match past destination by containment or exact match ---
+        match_indices = features_df[features_df["name_lower"].str.contains(past_name)].index.tolist()
+
+        if not match_indices:
+            continue  # skip if no matching destination in database
+
+        for past_index in match_indices:
             past_pos = features_df.index.get_loc(past_index)
             distance = similarity_matrix[target_pos][past_pos]
-            similarity = 1 / (1 + distance)
+            feature_similarity = 1 / (1 + distance)
 
+            # BONUS: Terrain and Climate tag similarities
+            target_row = features_df.iloc[target_pos]
+            past_row = features_df.iloc[past_pos]
+
+            def jaccard(set1, set2):
+                if not set1: return 1
+                if not set2: return 0
+                return len(set1 & set2) / len(set1 | set2)
+
+            def extract_tags(row, prefix):
+                return {col.split('_', 1)[1].lower() for col in row.index if col.startswith(prefix) and row[col] == 1}
+
+            target_terrains = extract_tags(target_row, "terrain")
+            past_terrains = extract_tags(past_row, "terrain")
+
+            target_climates = extract_tags(target_row, "climate")
+            past_climates = extract_tags(past_row, "climate")
+
+            terrain_similarity = jaccard(target_terrains, past_terrains)
+            climate_similarity = jaccard(target_climates, past_climates)
+
+            combined_similarity = (feature_similarity + terrain_similarity + climate_similarity) / 3
+
+            # Recency weighting
             months_ago = max(1, (now.year - trip_end.year) * 12 + now.month - trip_end.month)
             weight = 1 / months_ago
 
-            scores.append(similarity * weight)
+            scores.append(combined_similarity * weight)
             weights.append(weight)
 
     return np.sum(scores) / np.sum(weights) if weights else 0.0
 
 
-def recommend_destinations(user_id, n_recommendations=10, weight_kNN=0.2, weight_similarity=0.35, weight_past=0.2, weight_off_season=0.25):
+def recommend_destinations(user_id, n_recommendations=20, weight_kNN=0.23, weight_similarity=0.45, weight_past=0.2, weight_off_season=0.12):
     user = users_df[users_df['id'] == user_id]
     if user.empty:
         return "User ID not found in the database."
