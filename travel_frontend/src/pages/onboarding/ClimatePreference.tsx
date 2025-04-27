@@ -58,13 +58,13 @@ const ClimatePreferences = ({
       <div className="d-flex justify-content-center align-items-center mb-4 position-relative">
         <h2 className="text-center">Select Your Preferred Climate</h2>
         <Button
-          variant="outline-secondary"
+          variant="outline-primary"
           size="sm"
           className="ms-2 position-absolute"
           style={{ top: 0, right: 0 }}
           onClick={() => setShowInfoModal(true)}
         >
-          i
+          <i className="bi bi-info-circle"></i>
         </Button>
       </div>
 

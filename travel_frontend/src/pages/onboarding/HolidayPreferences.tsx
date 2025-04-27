@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Container, Row, Col, Button, Modal } from "react-bootstrap";
+import "bootstrap-icons/font/bootstrap-icons.css";
 import SelectableCard from "../../components/SelectableCard";
 import relaxedImg from "../../assets/images/holiday/relaxed.jpg";
 import adventureImg from "../../assets/images/holiday/adventure.jpg";
@@ -58,13 +59,13 @@ const HolidayPreferences = ({
       <div className="d-flex justify-content-center align-items-center mb-4 position-relative">
         <h2 className="text-center">Select Your Preferred Holiday Type</h2>
         <Button
-          variant="outline-secondary"
+          variant="outline-primary"
           size="sm"
           className="ms-2 position-absolute"
           style={{ top: 0, right: 0 }}
           onClick={() => setShowInfoModal(true)}
         >
-          i
+          <i className="bi bi-info-circle"></i>
         </Button>
       </div>
 
