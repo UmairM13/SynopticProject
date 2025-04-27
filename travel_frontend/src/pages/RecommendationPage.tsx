@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 import { Container, Row, Col, Spinner, Alert } from "react-bootstrap";
 import RecommendationCard from "../components/RecommendationCard";
 import ExplanationModal from "../components/ExplanationModal";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import {
   fetchRecommendations,
   saveRecommendation,
+  fetchSavedRecommendations,
+  deleteSavedRecommendation,
   fetchExplanation,
 } from "../api/RecommendationApi";
 
@@ -24,14 +28,21 @@ const RecommendationPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [explanationText, setExplanationText] = useState("");
   const [selectedDestination, setSelectedDestination] = useState("");
+  const [savedDestinations, setSavedDestinations] = useState<number[]>([]);
 
   useEffect(() => {
     const load = async () => {
       try {
         const token = localStorage.getItem("session_token") || "";
         const userId = localStorage.getItem("id") || "";
-        const data = await fetchRecommendations(token, userId);
-        setRecommendations(data);
+
+        const [recs, saved] = await Promise.all([
+          fetchRecommendations(token, userId),
+          fetchSavedRecommendations(token),
+        ]);
+
+        setRecommendations(recs);
+        setSavedDestinations(saved.map((rec: any) => rec.destination_id));
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -42,24 +53,29 @@ const RecommendationPage = () => {
   }, []);
 
   const handleSave = async (rec: Recommendation) => {
+    const token = localStorage.getItem("session_token") || "";
     try {
-      await saveRecommendation(
-        localStorage.getItem("session_token") || "",
-        rec.id,
-        rec.name
-      );
-      alert("Saved!");
+      if (savedDestinations.includes(rec.id)) {
+        await deleteSavedRecommendation(token, rec.id);
+        setSavedDestinations((prev) => prev.filter((id) => id !== rec.id));
+        toast.info(`Removed ${rec.name} from saved!`);
+      } else {
+        await saveRecommendation(token, rec.id, rec.name);
+        setSavedDestinations((prev) => [...prev, rec.id]);
+        toast.success(`Saved ${rec.name}! 🎉`);
+      }
     } catch (err) {
-      console.error("Save failed:", err);
+      console.error("Save/Delete failed:", err);
+      toast.error("Something went wrong.");
     }
   };
 
   const handleExplain = async (rec: Recommendation) => {
-    const user_id = localStorage.getItem("id") || "";
+    const userId = localStorage.getItem("id") || "";
     try {
       const data = await fetchExplanation(
         localStorage.getItem("session_token") || "",
-        user_id,
+        userId,
         rec.id
       );
       setExplanationText(data.explanation || "No explanation available.");
@@ -71,6 +87,7 @@ const RecommendationPage = () => {
       setShowModal(true);
     }
   };
+
   return (
     <Container className="mt-5 mb-5">
       <h2 className="mb-4 text-center">Your Travel Recommendations</h2>
@@ -95,17 +112,21 @@ const RecommendationPage = () => {
                 isOffSeason={rec.is_off_season === "Yes"}
                 onSave={() => handleSave(rec)}
                 onExplain={() => handleExplain(rec)}
+                isSaved={savedDestinations.includes(rec.id)}
               />
             </Col>
           ))}
         </Row>
       )}
+
       <ExplanationModal
         show={showModal}
         onHide={() => setShowModal(false)}
         destinationName={selectedDestination}
         explanation={explanationText}
       />
+
+      <ToastContainer position="bottom-center" autoClose={2000} />
     </Container>
   );
 };

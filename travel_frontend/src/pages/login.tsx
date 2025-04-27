@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { login } from "../api/UserApi";
 import { Container, Form, Button, Alert } from "react-bootstrap";
 import { useAuth } from "../context/AuthContext";
+import { preprocessRecommendations } from "../api/RecommendationApi";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>(""); // Changed to email for consistency
@@ -22,6 +23,7 @@ const Login: React.FC = () => {
       const userData = { email, password };
       await login(userData);
       auth.login();
+      await preprocessRecommendations(); // Preprocess recommendations after login
       const onboarded = localStorage.getItem("has_onboarded") === "true";
       navigate(onboarded ? "/recommendations" : "/onboarding");
     } catch (error: any) {

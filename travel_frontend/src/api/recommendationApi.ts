@@ -47,3 +47,49 @@ export const fetchExplanation = async (
 
   return response.json();
 };
+
+export const deleteSavedRecommendation = async (
+  token: string,
+  destination_id: number
+) => {
+  const response = await fetch(
+    `${BASE_URL}/recommendations/save/${destination_id}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Authorization": token,
+      },
+      body: JSON.stringify({ destination_id }),
+    }
+  );
+
+  if (!response.ok) throw new Error("Failed to delete saved recommendation");
+};
+
+export const fetchSavedRecommendations = async (token: string) => {
+  const response = await fetch(`${BASE_URL}/recommendations/saved`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Authorization": token,
+    },
+  });
+
+  if (!response.ok) throw new Error("Failed to fetch saved recommendations");
+
+  return response.json(); // should return array of saved recommendations
+};
+
+export const preprocessRecommendations = async () => {
+  const response = await fetch(`${BASE_URL}/recommendations/preprocess`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) throw new Error("Failed to preprocess recommendations");
+
+  return response.json();
+};
