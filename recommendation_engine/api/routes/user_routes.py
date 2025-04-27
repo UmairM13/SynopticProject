@@ -78,6 +78,7 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
         "current_country": user.current_country,
         "trip_start_date": user.trip_start_date,
         "trip_end_date": user.trip_end_date,
+        "past_destinations": user.past_destinations,
     }
 
 @router.post("/login")
