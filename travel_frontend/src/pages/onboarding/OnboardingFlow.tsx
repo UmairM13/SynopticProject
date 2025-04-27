@@ -6,6 +6,7 @@ import BudgetDateInput from "./BudgetDateStep";
 import FinalReview from "./FinalReview";
 import { updateUser } from "../../api/UserApi";
 import { useNavigate } from "react-router-dom";
+import { preprocessRecommendations } from "../../api/RecommendationApi";
 
 // You can adjust this to include email, age, etc. from context if needed
 interface OnboardingFormData {
@@ -56,6 +57,7 @@ const OnboardingFlow = () => {
       };
 
       await updateUser(parseInt(userId), payload);
+      await preprocessRecommendations();
       localStorage.setItem("has_onboarded", "true");
       console.log("User preferences updated successfully");
 

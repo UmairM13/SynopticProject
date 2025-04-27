@@ -6,6 +6,7 @@ import BudgetDateInput from "./BudgetDateStep";
 import { updateUser, getUserById } from "../../api/UserApi";
 import { useNavigate } from "react-router-dom";
 import { Spinner, Alert, Container } from "react-bootstrap";
+import { preprocessRecommendations } from "../../api/RecommendationApi";
 
 interface PreferencesFormData {
   preferred_terrain: string[];
@@ -77,6 +78,7 @@ const Preferences = () => {
         trip_end_date: formData.trip_end_date,
       });
       setSuccess("Preferences updated successfully!");
+      await preprocessRecommendations();
       navigate("/notebook");
     } catch (err) {
       setError("Error updating preferences.");

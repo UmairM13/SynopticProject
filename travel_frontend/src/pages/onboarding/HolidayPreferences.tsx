@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { Container, Row, Col, Button } from "react-bootstrap";
 import SelectableCard from "../../components/SelectableCard";
-import mountainImg from "../../assets/images/mountain.jpg";
-import desertImg from "../../assets/images/desert.jpg";
-import jungleImg from "../../assets/images/jungle.jpg";
-import beachImg from "../../assets/images/beach.jpg";
-import urbanImg from "../../assets/images/urban.jpg";
-import riverImg from "../../assets/images/river.jpg";
-import coastalImg from "../../assets/images/coastal.jpg";
-import valleyImg from "../../assets/images/valley.jpg";
-import anyImg from "../../assets/images/any.jpg";
+import relaxedImg from "../../assets/images/holiday/relaxed.jpg";
+import adventureImg from "../../assets/images/holiday/adventure.jpg";
+import culturalImg from "../../assets/images/holiday/cultural.jpg";
+import romanticImg from "../../assets/images/holiday/romantic.jpg";
+import shoppingImg from "../../assets/images/holiday/shopping.jpg";
+import luxuryImg from "../../assets/images/holiday/luxury.jpg";
+import partyImg from "../../assets/images/holiday/party.jpg";
+import familyImg from "../../assets/images/holiday/family.jpg";
+import anyImg from "../../assets/images/holiday/any.jpg";
 
 interface TerrainPreferencesProps {
   selected: string[];
@@ -17,14 +17,14 @@ interface TerrainPreferencesProps {
 }
 
 const holidayOptions = [
-  { label: "Relaxed", image: mountainImg },
-  { label: "Adventurous", image: desertImg },
-  { label: "Cultural", image: jungleImg },
-  { label: "Romantic", image: beachImg },
-  { label: "Shopping", image: urbanImg },
-  { label: "Luxury", image: riverImg },
-  { label: "Party", image: coastalImg },
-  { label: "Family", image: valleyImg },
+  { label: "Relaxed", image: relaxedImg },
+  { label: "Adventurous", image: adventureImg },
+  { label: "Cultural", image: culturalImg },
+  { label: "Romantic", image: romanticImg },
+  { label: "Shopping", image: shoppingImg },
+  { label: "Luxury", image: luxuryImg },
+  { label: "Party", image: partyImg },
+  { label: "Family", image: familyImg },
   { label: "Any", image: anyImg },
 ];
 const HolidayPreferences = ({

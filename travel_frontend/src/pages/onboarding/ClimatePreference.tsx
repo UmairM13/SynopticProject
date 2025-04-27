@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { Container, Row, Col, Button } from "react-bootstrap";
 import SelectableCard from "../../components/SelectableCard";
-import mountainImg from "../../assets/images/mountain.jpg";
-import desertImg from "../../assets/images/desert.jpg";
-import jungleImg from "../../assets/images/jungle.jpg";
-import beachImg from "../../assets/images/beach.jpg";
-import urbanImg from "../../assets/images/urban.jpg";
-import riverImg from "../../assets/images/river.jpg";
-import coastalImg from "../../assets/images/coastal.jpg";
-import valleyImg from "../../assets/images/valley.jpg";
-import anyImg from "../../assets/images/any.jpg";
+import tropicalImg from "../../assets/images/climate/tropical.jpg";
+import aridImg from "../../assets/images/climate/arid.jpg";
+import temperateImg from "../../assets/images/climate/temperate.jpg";
+import polarImg from "../../assets/images/climate/polar.jpg";
+import mediterraneanImg from "../../assets/images/climate/mediterranean.jpg";
+import humidImg from "../../assets/images/climate/humid.jpg";
+import subTropicalImg from "../../assets/images/climate/subtropical.jpg";
+import alpineImg from "../../assets/images/climate/alpine.jpg";
+import anyImg from "../../assets/images/climate/any.jpg";
 
 interface TerrainPreferencesProps {
   selected: string[];
@@ -17,14 +17,14 @@ interface TerrainPreferencesProps {
 }
 
 const climateOptions = [
-  { label: "Tropical", image: mountainImg },
-  { label: "Arid", image: desertImg },
-  { label: "Temperate", image: jungleImg },
-  { label: "Polar", image: beachImg },
-  { label: "Mediterranean", image: urbanImg },
-  { label: "Humid", image: riverImg },
-  { label: "Sub-Tropical", image: coastalImg },
-  { label: "Alpine", image: valleyImg },
+  { label: "Tropical", image: tropicalImg },
+  { label: "Arid", image: aridImg },
+  { label: "Temperate", image: temperateImg },
+  { label: "Polar", image: polarImg },
+  { label: "Mediterranean", image: mediterraneanImg },
+  { label: "Humid", image: humidImg },
+  { label: "Sub-Tropical", image: subTropicalImg },
+  { label: "Alpine", image: alpineImg },
   { label: "Any", image: anyImg },
 ];
 
