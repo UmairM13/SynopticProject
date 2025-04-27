@@ -124,7 +124,7 @@ const TerrainPreferences = ({
               <strong>Urban</strong> — e.g., New York City (USA), Tokyo (Japan)
             </li>
             <li>
-              <strong>River</strong> — e.g., Prague (Czech Republic), Porto
+              <strong>River</strong> — e.g., Victoria Falls (Zimbabwe), Porto
               (Portugal)
             </li>
             <li>

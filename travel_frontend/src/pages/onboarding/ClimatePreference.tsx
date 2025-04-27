@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Container, Row, Col, Button } from "react-bootstrap";
+import { Container, Row, Col, Button, Modal } from "react-bootstrap";
 import SelectableCard from "../../components/SelectableCard";
 import tropicalImg from "../../assets/images/climate/tropical.jpg";
 import aridImg from "../../assets/images/climate/arid.jpg";
@@ -11,7 +11,7 @@ import subTropicalImg from "../../assets/images/climate/subtropical.jpg";
 import alpineImg from "../../assets/images/climate/alpine.jpg";
 import anyImg from "../../assets/images/climate/any.jpg";
 
-interface TerrainPreferencesProps {
+interface ClimatePreferencesProps {
   selected: string[];
   onContinue: (selected: string[]) => void;
 }
@@ -31,8 +31,9 @@ const climateOptions = [
 const ClimatePreferences = ({
   selected,
   onContinue,
-}: TerrainPreferencesProps) => {
+}: ClimatePreferencesProps) => {
   const [selectedClimate, setSelectedClimates] = useState<string[]>(selected);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   useEffect(() => {
     setSelectedClimates(selected);
@@ -54,7 +55,19 @@ const ClimatePreferences = ({
 
   return (
     <Container className="mt-5">
-      <h2 className="mb-4 text-center">Select Your Preferred Climate</h2>
+      <div className="d-flex justify-content-center align-items-center mb-4 position-relative">
+        <h2 className="text-center">Select Your Preferred Climate</h2>
+        <Button
+          variant="outline-secondary"
+          size="sm"
+          className="ms-2 position-absolute"
+          style={{ top: 0, right: 0 }}
+          onClick={() => setShowInfoModal(true)}
+        >
+          i
+        </Button>
+      </div>
+
       <Row className="g-3">
         {climateOptions.map((option, index) => (
           <Col key={index} md={4} className="mb-3">
@@ -77,6 +90,57 @@ const ClimatePreferences = ({
           Continue
         </Button>
       </div>
+
+      {/* Info Modal */}
+      <Modal
+        show={showInfoModal}
+        onHide={() => setShowInfoModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Climate Preferences Info</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            Selecting your preferred climates helps us recommend destinations
+            where you'll feel most comfortable!
+          </p>
+          <ul>
+            <li>
+              <strong>Tropical</strong> — e.g., Bali (Indonesia), Honolulu (USA)
+            </li>
+            <li>
+              <strong>Arid</strong> — e.g., Cairo (Egypt), Phoenix (USA)
+            </li>
+            <li>
+              <strong>Temperate</strong> — e.g., Paris (France), Vancouver
+              (Canada)
+            </li>
+            <li>
+              <strong>Polar</strong> — e.g., Reykjavik (Iceland), Tromsø
+              (Norway)
+            </li>
+            <li>
+              <strong>Mediterranean</strong> — e.g., Barcelona (Spain), Athens
+              (Greece)
+            </li>
+            <li>
+              <strong>Humid</strong> — e.g., Singapore, New Orleans (USA)
+            </li>
+            <li>
+              <strong>Sub-Tropical</strong> — e.g., Algiers (Algeria), Brisbane
+              (Australia)
+            </li>
+            <li>
+              <strong>Alpine</strong> — e.g., Chamonix (France), Queenstown (New
+              Zealand)
+            </li>
+            <li>
+              <strong>Any</strong> — I'm open to any kind of climate!
+            </li>
+          </ul>
+        </Modal.Body>
+      </Modal>
     </Container>
   );
 };
