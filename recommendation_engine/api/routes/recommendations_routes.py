@@ -24,6 +24,7 @@ def get_saved_recommendations(
     saved_recommendations = controller.get_user_recommendations(db, current_user.id)
     
     return [{
+        "destination_id": rec.destination_id,
         "destination": rec.destination_name,
         "explanation": rec.explanation,
         "timestamp": rec.created_at
@@ -54,8 +55,8 @@ def preprocess_data():
 async def save_recommendation(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authentication())):
-    
+    current_user: User = Depends(require_authentication())
+):
     data = await request.json()
     destination_id = data.get("destination_id")
     destination_name = data.get("destination_name")
@@ -64,13 +65,34 @@ async def save_recommendation(
     if not destination_id or not destination_name:
         raise HTTPException(status_code=400, detail="destination_id and destination_name are required")
     
-    
-    saved = controller.save_recommendations(db, current_user.id, destination_id, destination_name, explanation)
-    
-    return{
+    try:
+        saved = controller.save_recommendations(db, current_user.id, destination_id, destination_name, explanation)
+    except HTTPException as e:
+        # If already saved, bubble up the error
+        raise e
+
+    return {
         "message": "Recommendation saved successfully",
         "destination": saved.destination_name,
         "timestamp": saved.created_at
     }
     
+
+@router.delete("/save/{destination_id}")
+async def delete_saved_recommendation(
+    destination_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_authentication())
+):
+    saved_recommendations = controller.get_user_recommendations(db, current_user.id)
+
+    if not saved_recommendations:
+        raise HTTPException(status_code=404, detail="No saved recommendations found")
+
+    for rec in saved_recommendations:
+        if rec.destination_id == destination_id:
+            db.delete(rec)
+            db.commit()
+            return {"message": "Recommendation deleted successfully"}
     
+    raise HTTPException(status_code=404, detail="Recommendation not found")
