@@ -10,6 +10,7 @@ interface RecommendationCardProps {
   onSave?: () => void;
   onExplain?: () => void;
   isSaved?: boolean;
+  hideExplainButton?: boolean;
 }
 
 const RecommendationCard = ({
@@ -21,6 +22,7 @@ const RecommendationCard = ({
   onSave,
   onExplain,
   isSaved,
+  hideExplainButton = false,
 }: RecommendationCardProps) => {
   const navigate = useNavigate();
 
@@ -44,25 +46,26 @@ const RecommendationCard = ({
         </Card.Text>
 
         <div className="d-flex justify-content-between">
-          <Button
-            variant="outline-primary"
-            onClick={(e) => {
-              e.stopPropagation();
-              onExplain?.();
-            }}
-          >
-            Why this?
-          </Button>
+          {!hideExplainButton && (
+            <Button
+              variant="outline-primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onExplain?.();
+              }}
+            >
+              Why this?
+            </Button>
+          )}
 
-          {/* Save / Unsave Button */}
           <Button
             variant={isSaved ? "success" : "outline-primary"}
             onClick={(e) => {
               e.stopPropagation();
-              onSave?.(); // Save OR Unsave
+              onSave?.();
             }}
           >
-            {isSaved ? "Saved ✓" : "Save"}
+            {isSaved ? "Saved" : "Save"}
           </Button>
         </div>
       </Card.Body>
