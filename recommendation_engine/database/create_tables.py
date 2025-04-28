@@ -108,6 +108,19 @@ cursor.execute("""
 """)
 
 
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user_recommendations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        destination_id INT NOT NULL,
+        destination_name VARCHAR(255) NOT NULL,
+        explanation TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+""")
+
+
 
 # Commit changes and close the connection
 connection.commit()
