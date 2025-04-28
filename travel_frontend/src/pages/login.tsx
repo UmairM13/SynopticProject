@@ -22,7 +22,13 @@ const Login: React.FC = () => {
     try {
       const userData = { email, password };
       await login(userData);
-      auth.login(email);
+
+      const user_id = localStorage.getItem("id");
+      if (!user_id) {
+        throw new Error("User ID not found in local storage");
+      }
+
+      auth.login(email, parseInt(user_id));
       await preprocessRecommendations(); // Preprocess recommendations after login
       const onboarded = localStorage.getItem("has_onboarded") === "true";
       navigate(onboarded ? "/recommendations" : "/onboarding");

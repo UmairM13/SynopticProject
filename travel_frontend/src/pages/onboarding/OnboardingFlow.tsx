@@ -7,6 +7,7 @@ import FinalReview from "./FinalReview";
 import { updateUser } from "../../api/UserApi";
 import { useNavigate } from "react-router-dom";
 import { preprocessRecommendations } from "../../api/RecommendationApi";
+import { useAuth } from "../../context/AuthContext";
 
 // You can adjust this to include email, age, etc. from context if needed
 interface OnboardingFormData {
@@ -39,11 +40,13 @@ const OnboardingFlow = () => {
     setFormData((prev) => ({ ...prev, ...newData }));
   };
 
+  const { userId, setHasOnboarded } = useAuth();
+
   const handleFinalSubmit = async () => {
     console.log("Submitting final onboarding data:", formData);
     // TODO: Send to backend via API call
     try {
-      const userId = localStorage.getItem("id");
+      // const userId = localStorage.getItem("id");
       if (!userId) throw new Error("User ID not found in local storage");
 
       const payload = {
@@ -56,10 +59,11 @@ const OnboardingFlow = () => {
         has_onboarded: true,
       };
 
-      await updateUser(parseInt(userId), payload);
+      await updateUser(userId, payload);
       await preprocessRecommendations();
       localStorage.setItem("has_onboarded", "true");
       console.log("User preferences updated successfully");
+      setHasOnboarded(true);
 
       navigate("/notebook");
     } catch (error) {

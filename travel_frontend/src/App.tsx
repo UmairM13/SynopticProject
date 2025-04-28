@@ -18,6 +18,7 @@ import DestinationDetailsPage from "./pages/DestinationDetails";
 import HomePage from "./pages/HomePage";
 import SearchPage from "./pages/SearchPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import { useAuth } from "./context/AuthContext";
 
 // function InactivityLogout() {
 //   const navigate = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,8 +46,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 // }
 
 function App() {
-  const isLoggedIn = !!localStorage.getItem("session_token");
-  const userEmail = localStorage.getItem("user_email");
+  const { isLoggedIn, userEmail } = useAuth();
 
   return (
     <Router>
