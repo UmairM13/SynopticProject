@@ -48,6 +48,7 @@ def user_stats(db: Session = Depends(get_db)):
     )
     top_climate = db.query(User.preferred_climate, func.count(User.id)).group_by(User.preferred_climate).order_by(func.count(User.id).desc()).first()
     top_terrain = db.query(User.preferred_terrain, func.count(User.id)).group_by(User.preferred_terrain).order_by(func.count(User.id).desc()).first()
+    top_holiday_type = db.query(User.holiday_type, func.count(User.id)).group_by(User.holiday_type).order_by(func.count(User.id).desc()).first()
     top_nationalities = db.query(User.nationality, func.count()).group_by(User.nationality).order_by(func.count().desc()).limit(5).all()
     total_recommendations = db.query(func.count(UserRecommendation.id)).scalar()
     
@@ -58,6 +59,7 @@ def user_stats(db: Session = Depends(get_db)):
         "avg_trip_duration": avg_trip_duration,
         "top_climate": top_climate[0] if top_climate else None,
         "top_terrain": top_terrain[0] if top_terrain else None,
+        "top_holiday_type": top_holiday_type[0] if top_holiday_type else None,
         "top_nationalities": [{"country": country, "count": count} for country, count in top_nationalities],
         "total_recommendations": total_recommendations
     }

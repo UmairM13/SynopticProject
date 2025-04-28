@@ -5,6 +5,7 @@ from recommendation_engine.api.controllers import recommender_controller as cont
 from recommendation_engine.api.models.database import SessionLocal
 from recommendation_engine.recommender.data_preprocessing import run_preprocessing
 from recommendation_engine.api.utils.auth import require_authentication
+from recommendation_engine.recommender.data_loader import DataManager
 
 router = APIRouter()
 
@@ -33,21 +34,29 @@ def get_saved_recommendations(
     
 @router.get("/{user_id}")
 def recommend_destinations(user_id: int):
+    
+    DataManager.get_instance().refresh()
+    
     results = controller.get_recommendations_for_user(user_id)
     if isinstance(results, str):
         raise HTTPException(status_code=404, detail=results)
     return results.to_dict(orient="records")
 
+
 @router.get("/explanation/{user_id}/{destination_name}")
 def explain_destination(user_id: int, destination_name: int):
+
+    
     explanation = controller.get_explanation_for_destination(user_id, destination_name)
     if isinstance(explanation, int):
         raise HTTPException(status_code=404, detail=explanation)
     return {"destination": destination_name, "explanation": explanation}
 
+
 @router.post("/preprocess")
 def preprocess_data():
     result = run_preprocessing()
+    DataManager.get_instance().refresh()
     return result
 
 
