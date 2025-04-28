@@ -4,8 +4,13 @@ import {
   fetchTopDestinations,
   fetchUserStats,
   fetchRecommendationActivity,
-} from "../api/AdminApi";
-import { Bar, Line } from "react-chartjs-2";
+  fetchPreferencesDistribution,
+  fetchPastDestinationsByNationality,
+  fetchPastDestinationsByAge,
+  fetchOffSeasonRate,
+  fetchOffSeasonMonthly,
+} from "../api/AdminApi"; // <-- we'll add these small fetchers
+import { Bar, Pie, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,21 +21,23 @@ import {
   Title,
   Tooltip,
   Legend,
+  ArcElement,
 } from "chart.js";
 
-// Register Chart.js components
+// Register Chart.js modules
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
   PointElement,
   LineElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend
 );
 
-// Types
+// Interfaces
 interface TopDestination {
   destination_name: string;
   count: number;
@@ -42,6 +49,9 @@ interface UserStats {
   avg_budget: number;
   top_climate: string;
   top_terrain: string;
+  top_holiday_type: string;
+  top_nationalities: { country: string; count: number }[];
+  total_recommendations: string;
 }
 
 interface RecommendationActivity {
@@ -50,24 +60,81 @@ interface RecommendationActivity {
   count: number;
 }
 
+interface PreferenceDistribution {
+  climates: { climate: string; count: number }[];
+  terrains: { terrain: string; count: number }[];
+}
+
+interface PastDestinationRecord {
+  nationality?: string;
+  age?: number;
+  destination: string;
+  count: number;
+}
+
+interface OffSeasonRate {
+  off_season_recommendations: number;
+  peak_season_recommendations: number;
+  off_season_ratio: string;
+}
+
+interface OffSeasonMonthly {
+  month: string;
+  off_season_destinations: number;
+}
+
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [topDestinations, setTopDestinations] = useState<TopDestination[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [activity, setActivity] = useState<RecommendationActivity[]>([]);
+  const [preferences, setPreferences] = useState<PreferenceDistribution | null>(
+    null
+  );
+  const [pastByNationality, setPastByNationality] = useState<
+    PastDestinationRecord[]
+  >([]);
+  const [pastByAge, setPastByAge] = useState<PastDestinationRecord[]>([]);
+  const [offSeasonRate, setOffSeasonRate] = useState<OffSeasonRate | null>(
+    null
+  );
+  const [offSeasonMonthly, setOffSeasonMonthly] = useState<OffSeasonMonthly[]>(
+    []
+  );
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [topDest, stats, activityData] = await Promise.all([
+        const [
+          topDest,
+          stats,
+          activityData,
+          prefDist,
+          pastNat,
+          pastAge,
+          seasonRate,
+          seasonMonthly,
+        ] = await Promise.all([
           fetchTopDestinations(),
           fetchUserStats(),
           fetchRecommendationActivity(),
+          fetchPreferencesDistribution(),
+          fetchPastDestinationsByNationality(),
+          fetchPastDestinationsByAge(),
+          fetchOffSeasonRate(),
+          fetchOffSeasonMonthly(),
         ]);
+
         setTopDestinations(topDest);
         setUserStats(stats);
         setActivity(activityData);
+        setPreferences(prefDist);
+        setPastByNationality(pastNat);
+        setPastByAge(pastAge);
+        setOffSeasonRate(seasonRate);
+        setOffSeasonMonthly(seasonMonthly);
       } catch (err) {
         console.error(err);
         setError("Failed to load admin data.");
@@ -102,7 +169,7 @@ const AdminDashboard = () => {
 
       <Row className="mb-5">
         <Col md={6}>
-          {/* Top Destinations Chart */}
+          {/* Top Destinations */}
           <Bar
             data={{
               labels: topDestinations.map((d) => d.destination_name),
@@ -117,9 +184,6 @@ const AdminDashboard = () => {
             options={{
               responsive: true,
               plugins: {
-                legend: {
-                  position: "top" as const,
-                },
                 title: {
                   display: true,
                   text: "Top Saved Destinations",
@@ -151,15 +215,29 @@ const AdminDashboard = () => {
                 <p>
                   <strong>Top Terrain:</strong> {userStats.top_terrain || "N/A"}
                 </p>
+                <p>
+                  <strong>Top Holiday Type:</strong>{" "}
+                  {userStats.top_holiday_type || "N/A"}
+                </p>
+                <p>
+                  <strong>Top Nationalities:</strong>{" "}
+                  {userStats.top_nationalities
+                    .map((n) => `${n.country} (${n.count})`)
+                    .join(", ")}
+                </p>
+                <p>
+                  <strong>Top Recommendations:</strong>{" "}
+                  {userStats.total_recommendations || "N/A"}
+                </p>
               </>
             )}
           </div>
         </Col>
       </Row>
 
-      <Row>
+      <Row className="mb-5">
         <Col>
-          {/* Recommendation Activity Over Time */}
+          {/* Monthly Recommendation Activity */}
           <Line
             data={{
               labels: activity.map((a) => `${a.month}/${a.year}`),
@@ -169,19 +247,193 @@ const AdminDashboard = () => {
                   data: activity.map((a) => a.count),
                   fill: false,
                   borderColor: "rgba(99, 102, 241, 0.8)",
-                  tension: 0.3,
+                  tension: 0.4,
                 },
               ],
             }}
             options={{
               responsive: true,
               plugins: {
-                legend: {
-                  position: "top" as const,
-                },
                 title: {
                   display: true,
                   text: "Monthly Recommendation Activity",
+                },
+              },
+            }}
+          />
+        </Col>
+      </Row>
+
+      <Row className="mb-5">
+        <Col md={6}>
+          {/* Climate Preferences */}
+          {preferences && (
+            <Pie
+              data={{
+                labels: preferences.climates.map((c) => c.climate),
+                datasets: [
+                  {
+                    label: "Climate Preferences",
+                    data: preferences.climates.map((c) => c.count),
+                    backgroundColor: [
+                      "rgba(255, 99, 132, 0.6)",
+                      "rgba(54, 162, 235, 0.6)",
+                      "rgba(255, 206, 86, 0.6)",
+                      "rgba(75, 192, 192, 0.6)",
+                      "rgba(153, 102, 255, 0.6)",
+                    ],
+                  },
+                ],
+              }}
+              options={{
+                plugins: {
+                  title: {
+                    display: true,
+                    text: "Preferred Climates",
+                  },
+                },
+              }}
+            />
+          )}
+        </Col>
+
+        <Col md={6}>
+          {/* Terrain Preferences */}
+          {preferences && (
+            <Pie
+              data={{
+                labels: preferences.terrains.map((t) => t.terrain),
+                datasets: [
+                  {
+                    label: "Terrain Preferences",
+                    data: preferences.terrains.map((t) => t.count),
+                    backgroundColor: [
+                      "rgba(255, 159, 64, 0.6)",
+                      "rgba(255, 99, 132, 0.6)",
+                      "rgba(153, 102, 255, 0.6)",
+                      "rgba(75, 192, 192, 0.6)",
+                    ],
+                  },
+                ],
+              }}
+              options={{
+                plugins: {
+                  title: {
+                    display: true,
+                    text: "Preferred Terrains",
+                  },
+                },
+              }}
+            />
+          )}
+        </Col>
+      </Row>
+
+      <Row className="mb-5">
+        <Col md={6}>
+          {/* Past Destinations by Nationality */}
+          <Bar
+            data={{
+              labels: pastByNationality.map(
+                (r) => `${r.nationality}: ${r.destination}`
+              ),
+              datasets: [
+                {
+                  label: "Past Destinations (by Nationality)",
+                  data: pastByNationality.map((r) => r.count),
+                  backgroundColor: "rgba(54, 162, 235, 0.5)",
+                },
+              ],
+            }}
+            options={{
+              plugins: {
+                title: {
+                  display: true,
+                  text: "Top Past Destinations by Nationality",
+                },
+              },
+            }}
+          />
+        </Col>
+
+        <Col md={6}>
+          {/* Past Destinations by Age */}
+          <Bar
+            data={{
+              labels: pastByAge.map((r) => `${r.age}: ${r.destination}`),
+              datasets: [
+                {
+                  label: "Past Destinations (by Age)",
+                  data: pastByAge.map((r) => r.count),
+                  backgroundColor: "rgba(255, 206, 86, 0.5)",
+                },
+              ],
+            }}
+            options={{
+              plugins: {
+                title: {
+                  display: true,
+                  text: "Top Past Destinations by Age",
+                },
+              },
+            }}
+          />
+        </Col>
+      </Row>
+
+      <Row className="mb-5">
+        <Col md={6}>
+          {/* Off Season Rate */}
+          {offSeasonRate && (
+            <Pie
+              data={{
+                labels: ["Off-Season", "Peak-Season"],
+                datasets: [
+                  {
+                    label: "Off-Season vs Peak-Season",
+                    data: [
+                      offSeasonRate.off_season_recommendations,
+                      offSeasonRate.peak_season_recommendations,
+                    ],
+                    backgroundColor: [
+                      "rgba(75, 192, 192, 0.6)",
+                      "rgba(255, 99, 132, 0.6)",
+                    ],
+                  },
+                ],
+              }}
+              options={{
+                plugins: {
+                  title: {
+                    display: true,
+                    text: `Off-Season Rate (${offSeasonRate.off_season_ratio})`,
+                  },
+                },
+              }}
+            />
+          )}
+        </Col>
+
+        <Col md={6}>
+          {/* Monthly Off-Season Availability */}
+          <Line
+            data={{
+              labels: offSeasonMonthly.map((m) => m.month),
+              datasets: [
+                {
+                  label: "Off-Season Destinations",
+                  data: offSeasonMonthly.map((m) => m.off_season_destinations),
+                  fill: true,
+                  backgroundColor: "rgba(153, 102, 255, 0.2)",
+                  borderColor: "rgba(153, 102, 255, 1)",
+                },
+              ],
+            }}
+            options={{
+              plugins: {
+                title: {
+                  display: true,
+                  text: "Monthly Off-Season Destination Availability",
                 },
               },
             }}
