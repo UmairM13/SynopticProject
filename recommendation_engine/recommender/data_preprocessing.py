@@ -12,6 +12,7 @@ from recommendation_engine.recommender.data_loader import DataManager
 # # For testing
 # from data_collection import users_df, destinations_df, past_destinations_df
 # from data_loader import load_processed_data
+# from data_loader import DataManager
 
 def encode_multi_label(df, column, prefix):
     mlb = MultiLabelBinarizer()
@@ -69,6 +70,7 @@ def run_preprocessing():
     global users_df, destinations_df, past_destinations_df
 
     from recommendation_engine.recommender.data_collection import users_df as fresh_users_df, destinations_df as fresh_destinations_df, past_destinations_df as fresh_past_destinations_df
+    # from data_collection import users_df as fresh_users_df, destinations_df as fresh_destinations_df, past_destinations_df as fresh_past_destinations_df
 
     users_df = fresh_users_df.copy()
     destinations_df = fresh_destinations_df.copy()

@@ -39,6 +39,7 @@ class DataManager:
 
     def refresh(self):
         from recommendation_engine.recommender.data_loader import load_processed_data
+        # from data_loader import load_processed_data
         self.users_df, self.destinations_df, self.past_destinations_df = load_processed_data()
 
     def get_users(self):
