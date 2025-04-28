@@ -29,10 +29,21 @@ def recommend_similar_destinations(destination_name, destinations_df, features_d
     destination_name = destination_name.strip().lower()
     destinations_df['name_lower'] = destinations_df['name'].str.strip().str.lower()
 
+    # Check if destination exists
     if destination_name not in destinations_df['name_lower'].values:
         return f"Destination '{destination_name}' not found."
 
-    target_id = features_df[features_df['name'] == destination_name].index[0]
+    # Get correct index from destinations_df
+    target_row = destinations_df[destinations_df['name_lower'] == destination_name]
+    if target_row.empty:
+        return f"Destination '{destination_name}' not found."
+
+    target_id = target_row.iloc[0]['id']
+
+    # Get the index position in features_df
+    if target_id not in features_df.index:
+        return f"Destination ID {target_id} not found in features."
+
     idx = list(features_df.index).index(target_id)
 
     sim_scores = list(enumerate(similarity_matrix[idx]))

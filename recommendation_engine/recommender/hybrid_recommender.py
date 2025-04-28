@@ -13,33 +13,37 @@ from recommendation_engine.recommender.content_based_model import prepare_featur
 # from data_loader import load_processed_data
 # from content_based_model import prepare_features
 
+# Initialize data
+current_month = datetime.now().month
 
+# Load data
 data_manager = DataManager.get_instance()
 users_df = data_manager.get_users()
 destinations_df = data_manager.get_destinations()
 past_destinations_df = data_manager.get_past_destinations()
-# Check available columns
-# print("Columns in destinations_df:", destinations_df.columns)
 
-current_month = datetime.now().month
+# Prepare features
+irrelevant_columns = [
+    'IATA_code', 'departure_city', 'departure_country', 'destination_id',
+    'user_id', 'name', 'flight_cost', 'flight_cost_original',
+    'hotel_cost', 'hotel_cost_original', 'train_cost',
+    'avg_daily_budget_original'
+] + [col for col in destinations_df.columns if col.startswith('language_')]
 
-# print("\n=== Data Validation ===")
-# print("Destination columns:", destinations_df.columns.tolist())
-# print("NaN counts:", destinations_df.isna().sum().sum())
+features_for_knn = destinations_df.drop(columns=irrelevant_columns, errors='ignore')
+features_for_knn = features_for_knn.select_dtypes(include=['number'])
+# Only scale avg_daily_budget
+scaler_budget = StandardScaler()
+if 'avg_daily_budget' in features_for_knn.columns:
+    features_for_knn['avg_daily_budget'] = scaler_budget.fit_transform(features_for_knn[['avg_daily_budget']])
 
+# KNN Model
+knn = NearestNeighbors(n_neighbors=20, metric='cosine')
+knn.fit(features_for_knn)
 
-# Drop non-numeric columns for model training
-drop_columns = ['id', 'name', 'currency']
-features = destinations_df.drop(columns=[col for col in drop_columns if col in destinations_df.columns])
-# Ensure all columns are numeric
-features = features.apply(pd.to_numeric, errors='coerce').fillna(0)
-scaler = StandardScaler()
-features_scaled = scaler.fit_transform(features)
-features_scaled = np.nan_to_num(features_scaled, nan=0.0)
+# Content model
+features_df, similarity_matrix = prepare_features(destinations_df)
 
-# Fit KNN model 
-knn = NearestNeighbors(n_neighbors=20, metric='euclidean')
-knn.fit(features_scaled)
 
 
 def compute_past_similarity(destination_name, user_id, features_df, similarity_matrix, past_destinations_df):
@@ -57,171 +61,133 @@ def compute_past_similarity(destination_name, user_id, features_df, similarity_m
 
     target_index = features_df[features_df["name_lower"] == destination_name].index[0]
     target_pos = features_df.index.get_loc(target_index)
-
     scores = []
     weights = []
 
     for _, row in user_history.iterrows():
         past_name = row["destination_name"].strip().lower()
         trip_end = pd.to_datetime(row["trip_end_date"], errors="coerce")
-        if not pd.notna(trip_end):
-            continue
-
-        # --- Match past destination by containment or exact match ---
-        match_indices = features_df[features_df["name_lower"].str.contains(past_name)].index.tolist()
-
-        if not match_indices:
-            continue  # skip if no matching destination in database
-
-        for past_index in match_indices:
+        if past_name in features_df["name_lower"].values and pd.notna(trip_end):
+            past_index = features_df[features_df["name_lower"] == past_name].index[0]
             past_pos = features_df.index.get_loc(past_index)
             distance = similarity_matrix[target_pos][past_pos]
-            feature_similarity = 1 / (1 + distance)
+            similarity = 1 / (1 + distance)
 
-            # BONUS: Terrain and Climate tag similarities
-            target_row = features_df.iloc[target_pos]
-            past_row = features_df.iloc[past_pos]
-
-            def jaccard(set1, set2):
-                if not set1: return 1
-                if not set2: return 0
-                return len(set1 & set2) / len(set1 | set2)
-
-            def extract_tags(row, prefix):
-                return {col.split('_', 1)[1].lower() for col in row.index if col.startswith(prefix) and row[col] == 1}
-
-            target_terrains = extract_tags(target_row, "terrain")
-            past_terrains = extract_tags(past_row, "terrain")
-
-            target_climates = extract_tags(target_row, "climate")
-            past_climates = extract_tags(past_row, "climate")
-
-            terrain_similarity = jaccard(target_terrains, past_terrains)
-            climate_similarity = jaccard(target_climates, past_climates)
-
-            combined_similarity = (feature_similarity + terrain_similarity + climate_similarity) / 3
-
-            # Recency weighting
             months_ago = max(1, (now.year - trip_end.year) * 12 + now.month - trip_end.month)
             weight = 1 / months_ago
 
-            scores.append(combined_similarity * weight)
+            scores.append(similarity * weight)
             weights.append(weight)
 
     return np.sum(scores) / np.sum(weights) if weights else 0.0
 
 
-def recommend_destinations(user_id, n_recommendations=20, weight_kNN=0.23, weight_similarity=0.45, weight_past=0.2, weight_off_season=0.12):
+def recommend_destinations(user_id, n_recommendations=20, weight_kNN=0.24, weight_similarity=0.45, weight_past=0.26, weight_off_season=0.05):
     user = users_df[users_df['id'] == user_id]
     if user.empty:
-        return "User ID not found in the database."
-    
-    features_df, similarity_matrix = prepare_features(destinations_df) 
-        
-    # Initialize user vector with zeros based on features
-    user_vector = pd.DataFrame(0, index=[0], columns=features.columns)
-    # Set budget
-    user_vector['avg_daily_budget'] = user['budget'].values[0]
-    
-    # Function to set one-hot encoding based on user preference
-    def set_one_hot_encoding(preference, column_prefix, user_vector):
+        return "User not found"
+
+    user_vector = pd.DataFrame(0, index=[0], columns=features_for_knn.columns)
+
+    if 'avg_daily_budget' in user_vector.columns:
+        user_vector['avg_daily_budget'] = scaler_budget.transform([[user['budget'].values[0]]])[0][0]
+
+    def set_one_hot(preference, prefix):
         if pd.notna(preference):
-            column_name = f"{column_prefix}_{preference}"
-            if column_name in user_vector.columns:
-                user_vector[column_name] = 1
+            prefs = str(preference).split(',')
+            for pref in prefs:
+                col = f"{prefix}_{pref.strip().lower()}"
+                if col in user_vector.columns:
+                    user_vector.at[0, col] = 1
 
-    # One-hot encoding for nationality, climate, and terrain preferences
-    set_one_hot_encoding(user['nationality'].values[0], "country", user_vector)
-    for climate in user['preferred_climate_original'].values[0].split(','):
-        set_one_hot_encoding(climate.strip(), "climate", user_vector)
-    for terrain in user['preferred_terrain_original'].values[0].split(','):
-        set_one_hot_encoding(terrain.strip(), "terrain", user_vector)
+    set_one_hot(user['nationality'].values[0], 'country')
+    set_one_hot(user['preferred_climate_original'].values[0], 'climate')
+    set_one_hot(user['preferred_terrain_original'].values[0], 'terrain')
+    set_one_hot(user['holiday_type_original'].values[0], 'holiday_type')
 
-    user_vector = pd.DataFrame(user_vector, columns=features.columns)
-    user_vector_scaled = scaler.transform(user_vector)
+    distances, indices = knn.kneighbors(user_vector, n_neighbors=min(n_recommendations, len(destinations_df)))
+    max_distance = distances.max()
     
-    # Find the nearest destinations using KNN (returning n_recommendations neighbors)
-    distances, indices = knn.kneighbors(user_vector_scaled, n_neighbors=min(n_recommendations, len(destinations_df)))
-    
-    # Similarity function based on one-hot encoded columns for climate and terrain and budget comparison
-    def calculate_similarity(destination, user):
-        def jaccard(set1, set2):
-            if not set1:  # If preference was 'any'
-                return 1
-            if not set2:
-                return 0
-            return len(set1 & set2) / len(set1 | set2)
+    recommendations = []
+
+    for i, idx in enumerate(indices[0]):
+        destination = destinations_df.iloc[idx]
+
+        if max_distance == 0:
+            normalized_knn_score = 1.0
+        else:
+            normalized_knn_score = 1 - distances[0][i]
+            normalized_knn_score = max(0, normalized_knn_score)
         
-        climates_raw = user['preferred_climate_original'].values[0].lower()
-        climates = set() if "any" in climates_raw else set(map(str.strip, climates_raw.split(',')))
+        # Similarity calculation
+        def jaccard(set1, set2):
+            if not set1: return 1
+            if not set2: return 0
+            return len(set1 & set2) / len(set1 | set2)
 
-        terrains_raw = user['preferred_terrain_original'].values[0].lower()
-        terrains = set() if "any" in terrains_raw else set(map(str.strip, terrains_raw.split(',')))
+        def get_set(destination, prefix):
+            return {col.split('_', 1)[1].lower() for col in destination.index if col.startswith(prefix) and destination[col] == 1}
 
-        holidays_raw = user['holiday_type_original'].values[0].lower()
-        holidays = set() if "any" in holidays_raw else set(map(str.strip, holidays_raw.split(',')))
+        climates = set(map(str.strip, user['preferred_climate_original'].values[0].lower().split(','))) if 'any' not in user['preferred_climate_original'].values[0].lower() else set()
+        terrains = set(map(str.strip, user['preferred_terrain_original'].values[0].lower().split(','))) if 'any' not in user['preferred_terrain_original'].values[0].lower() else set()
+        holidays = set(map(str.strip, user['holiday_type_original'].values[0].lower().split(','))) if 'any' not in user['holiday_type_original'].values[0].lower() else set()
 
-        dest_climates = {col.split('_', 1)[1].lower() for col in destination.index if col.startswith("climate_") and destination[col] == 1}
-        dest_terrains = {col.split('_', 1)[1].lower() for col in destination.index if col.startswith("terrain_") and destination[col] == 1}
-        dest_holidays = set(col.replace("holiday_type_", "").strip().lower() for col in destination.index if col.startswith("holiday_type_") and destination[col] == 1)
+        dest_climates = get_set(destination, 'climate')
+        dest_terrains = get_set(destination, 'terrain')
+        dest_holidays = get_set(destination, 'holiday_type')
 
         climate_score = jaccard(climates, dest_climates)
         terrain_score = jaccard(terrains, dest_terrains)
         holiday_score = jaccard(holidays, dest_holidays)
 
         user_budget = float(user['budget'].values[0])
-        destination_budget = float(destination.get('avg_daily_budget_original', destination['avg_daily_budget']))
-        budget_score = 1 if destination_budget <= user_budget else max(0, 1 - (destination_budget - user_budget) / user_budget)
+        dest_budget = destination.get('avg_daily_budget_original', destination['avg_daily_budget'])
+        budget_score = 1 if dest_budget <= user_budget else max(0, 1 - (dest_budget - user_budget) / user_budget)
 
-        return (climate_score + terrain_score + holiday_score + budget_score) / 4
-    
-    recommendations = []
-    
-    def calculate_off_season_score(destination_row):
-        start = destination_row['off_season_start']
-        end = destination_row['off_season_end']
-        if pd.isna(start) or pd.isna(end):
-            return 0.3
-        is_off_season = start <= current_month <= end if start <= end else current_month >= start or current_month <= end
-        return 1.0 if is_off_season else 0.3
-    
-    
-    # Loop through the nearest destinations and calculate final score
-    # Fixed enumerate syntax - needs to be called with an iterable
-    for i, idx in enumerate(indices[0]):
-        destination = destinations_df.iloc[idx]
-        knn_score = distances[0][i]
-        similarity_score = calculate_similarity(destination, user)
-        content_score = compute_past_similarity(destination['name'], user_id, features_df, similarity_matrix, past_destinations_df)
-        normalized_knn_score = 1 / (1 + knn_score)
-        normalized_similarity = similarity_score  # already in range [0, 1]
-        off_season_score = calculate_off_season_score(destination)
+        similarity_score = (climate_score + terrain_score + holiday_score + budget_score) / 4
+
+        # Past travel similarity
+        destination_name = destination['name']
+        past_similarity = compute_past_similarity(destination_name, user_id, features_df, similarity_matrix, past_destinations_df)
+        
+        # Squash past similarity to [0, 1]
+        past_similarity = past_similarity / (1 + past_similarity)
+        
+        # Off season
+        start = destination['off_season_start']
+        end = destination['off_season_end']
+        off_season_score = 0.5
+        if pd.notna(start) and pd.notna(end):
+            if start <= end:
+                off_season = start <= current_month <= end
+            else:
+                off_season = current_month >= start or current_month <= end
+            off_season_score = 0.65 if off_season else 0.5
 
         final_score = (
             weight_kNN * normalized_knn_score +
-            weight_similarity * normalized_similarity +
-            weight_past * content_score +
+            weight_similarity * similarity_score +
+            weight_past * past_similarity +
             weight_off_season * off_season_score
         )
 
         country_val = next((col.split('_', 1)[1] for col in destination.index if col.startswith('country_') and destination[col] == 1), 'Unknown')
 
         recommendations.append({
+            'id': destination['id'],
             'name': destination['name'],
             'country': country_val,
             'final_score': final_score,
             'knn_score': normalized_knn_score,
-            'similarity_score': normalized_similarity,
-            'content_score': content_score,
+            'similarity_score': similarity_score,
+            'past_similarity': past_similarity,
             'off_season_score': off_season_score,
-            'avg_daily_budget': destination['avg_daily_budget_original'],
-            'is_off_season': "Yes" if off_season_score > 0.5 else "No",
-            'id': destination['id']
+            'avg_daily_budget': dest_budget,
+            'is_off_season': 'Yes' if off_season_score > 0.58 else 'No'
         })
 
     recommendations_df = pd.DataFrame(recommendations)
-    return recommendations_df.sort_values(by='final_score', ascending=False).head(n_recommendations) if not recommendations_df.empty else "No suitable destinations found."
-
+    return recommendations_df.sort_values('final_score', ascending=False).head(n_recommendations)
 
 def convert_numpy_types(obj):
     if isinstance(obj, (np.bool_, np.bool8)):
@@ -245,10 +211,10 @@ def clean_explanation(explanation):
     
     
 def explain_recommendation(destination_id, user_id, 
-                           weight_kNN=0.2, 
-                           weight_similarity=0.35, 
-                           weight_past=0.2, 
-                           weight_off_season=0.25):
+                           weight_kNN=0.24, 
+                           weight_similarity=0.45, 
+                           weight_past=0.26, 
+                           weight_off_season=0.05):
     """Provide enhanced explanation for a specific destination recommendation."""
     user = users_df[users_df['id'] == user_id]
     destination_row = destinations_df[destinations_df['id'] == destination_id]
@@ -266,36 +232,24 @@ def explain_recommendation(destination_id, user_id,
 
     # Setup sets for preference comparison
     climate_raw = user['preferred_climate_original'].values[0].lower()
-    if "any" in climate_raw:
-        user_climates = set()
-        climate_display = ["any (matches all)"]
-    else:
-        user_climates = set(map(str.strip, climate_raw.split(',')))
-        climate_display = list(user_climates)
-    
+    user_climates = set(map(str.strip, climate_raw.split(','))) if "any" not in climate_raw else set()
+    climate_display = list(user_climates) if user_climates else ["any (matches all)"]
+
     terrain_raw = user['preferred_terrain_original'].values[0].lower()
-    if "any" in terrain_raw:
-        user_terrains = set()
-        terrain_display = ["any (matches all)"]
-    else:
-        user_terrains = set(map(str.strip, terrain_raw.split(',')))
-        terrain_display = list(user_terrains)
+    user_terrains = set(map(str.strip, terrain_raw.split(','))) if "any" not in terrain_raw else set()
+    terrain_display = list(user_terrains) if user_terrains else ["any (matches all)"]
 
     holidays_raw = user['holiday_type_original'].values[0].lower()
-    if "any" in holidays_raw:
-        user_holidays = set()
-        holiday_display = ["any (matches all)"]
-    else:
-        user_holidays = set(map(str.strip, holidays_raw.split(',')))
-        holiday_display = list(user_holidays)
-        
+    user_holidays = set(map(str.strip, holidays_raw.split(','))) if "any" not in holidays_raw else set()
+    holiday_display = list(user_holidays) if user_holidays else ["any (matches all)"]
+
     dest_climates = {col.split('_', 1)[1].lower() for col in destination.index if col.startswith("climate_") and destination[col] == 1}
     dest_terrains = {col.split('_', 1)[1].lower() for col in destination.index if col.startswith("terrain_") and destination[col] == 1}
     dest_holidays = {col.replace("holiday_type_", "").strip().lower() for col in destination.index if col.startswith("holiday_type_") and destination[col] == 1}
 
     # Helper: Jaccard similarity
     def jaccard(set1, set2):
-        if not set1:  # If preference was 'any'
+        if not set1:
             return 1
         if not set2:
             return 0
@@ -347,42 +301,32 @@ def explain_recommendation(destination_id, user_id,
         "budget_gap": round(budget_gap, 2),
         "within_budget": bool(within_budget)
     }
-
     if within_budget:
         explanation["match_summary"].append("budget_match")
 
-    # Off-season check
-    start = destination['off_season_start']
-    end = destination['off_season_end']
-    in_off_season = False
-    if pd.notna(start) and pd.notna(end):
-        month_names = list(calendar.month_name)
-        if start <= end:
-            off_months = month_names[start:end + 1]
-        else:
-            off_months = month_names[start:] + month_names[1:end + 1]
-        in_off_season = start <= current_month <= end if start <= end else current_month >= start or current_month <= end
-        explanation["details"]["off_season"] = {
-            "months": off_months,
-            "currently_in_off_season": bool(in_off_season)
-        }
+    # Prepare the real features for KNN match (cosine distance)
+    irrelevant_columns = [
+        'IATA_code', 'departure_city', 'departure_country', 'destination_id',
+        'user_id', 'name', 'flight_cost', 'flight_cost_original',
+        'hotel_cost', 'hotel_cost_original', 'train_cost',
+        'avg_daily_budget_original'
+    ] + [col for col in destinations_df.columns if col.startswith('language_')]
 
-    # Past destination similarity score
-    features_df, similarity_matrix = prepare_features(destinations_df)
-    
-    content_score = compute_past_similarity(destination['name'], user_id, features_df, similarity_matrix, past_destinations_df)
+    features_for_knn = destinations_df.drop(columns=irrelevant_columns, errors='ignore')
+    features_for_knn = features_for_knn.select_dtypes(include=['number'])
 
-    # kNN Score (recompute distance from user vector)
-    drop_columns = ['id', 'name', 'currency']
-    features = destinations_df.drop(columns=[col for col in drop_columns if col in destinations_df.columns])
-    features = features.apply(pd.to_numeric, errors='coerce').fillna(0)
-    scaler = StandardScaler()
-    features_scaled = scaler.fit_transform(features)
-    knn_model = NearestNeighbors(n_neighbors=20, metric='euclidean')
-    knn_model.fit(features_scaled)
+    scaler_budget = StandardScaler()
+    if 'avg_daily_budget' in features_for_knn.columns:
+        features_for_knn['avg_daily_budget'] = scaler_budget.fit_transform(features_for_knn[['avg_daily_budget']])
 
-    user_vector = pd.DataFrame(0, index=[0], columns=features.columns)
-    user_vector['avg_daily_budget'] = user_budget
+    knn_model = NearestNeighbors(n_neighbors=20, metric='cosine')
+    knn_model.fit(features_for_knn)
+
+    # Build user vector
+    user_vector = pd.DataFrame(0, index=[0], columns=features_for_knn.columns)
+    if 'avg_daily_budget' in user_vector.columns:
+        user_vector['avg_daily_budget'] = scaler_budget.transform([[user_budget]])[0][0]
+
     for climate in user_climates:
         col = f"climate_{climate}"
         if col in user_vector.columns:
@@ -391,15 +335,24 @@ def explain_recommendation(destination_id, user_id,
         col = f"terrain_{terrain}"
         if col in user_vector.columns:
             user_vector[col] = 1
-    nationality_col = f"country_{user['nationality'].values[0]}"
+    for holiday in user_holidays:
+        col = f"holiday_type_{holiday}"
+        if col in user_vector.columns:
+            user_vector[col] = 1
+    nationality_col = f"country_{user['nationality'].values[0].strip().lower()}"
     if nationality_col in user_vector.columns:
         user_vector[nationality_col] = 1
 
-    user_vector_scaled = scaler.transform(user_vector)
-    distances, indices = knn_model.kneighbors(user_vector_scaled, n_neighbors=len(destinations_df))
+    distances, indices = knn_model.kneighbors(user_vector, n_neighbors=len(destinations_df))
     destination_idx = destinations_df[destinations_df['id'] == destination_id].index[0]
     knn_distance = distances[0][list(indices[0]).index(destination_idx)]
-    knn_score = 1 / (1 + knn_distance)
+    normalized_knn_score = 1 - knn_distance
+    normalized_knn_score = max(0, normalized_knn_score)
+
+    # Past destination similarity (content score)
+    features_df, similarity_matrix = prepare_features(destinations_df)
+    content_score = compute_past_similarity(destination['name'], user_id, features_df, similarity_matrix, past_destinations_df)
+    content_score = content_score / (1 + content_score)  # squash
 
     # Match score using preference similarity
     preference_similarity = (
@@ -410,20 +363,38 @@ def explain_recommendation(destination_id, user_id,
     ) / 4
 
     # Off-season score
-    off_season_score = 1.0 if in_off_season else 0.3
+    start = destination['off_season_start']
+    end = destination['off_season_end']
+    off_season_score = 0.5
+    if pd.notna(start) and pd.notna(end):
+        if start <= end:
+            in_off_season = start <= current_month <= end
+            months_from_season = min(abs(current_month - start), abs(current_month - end))
+        else:
+            in_off_season = current_month >= start or current_month <= end
+            months_from_season = min((current_month - start) % 12, (end - current_month) % 12)
+
+        if in_off_season:
+            off_season_score = 0.6
+        else:
+            off_season_score = 0.5 + max(0, 0.1 - (months_from_season * 0.02))
+
+    explanation["details"]["off_season"] = {
+        "currently_in_off_season": bool(in_off_season),
+        "score": round(off_season_score, 3)
+    }
 
     # Final weighted score
     final_score = (
-        weight_kNN * knn_score +
+        weight_kNN * normalized_knn_score +
         weight_similarity * preference_similarity +
         weight_past * content_score +
         weight_off_season * off_season_score
     )
 
-    # Score breakdown
     explanation["details"]["score_breakdown"] = {
         "final_score": round(final_score, 3),
-        "knn_score": round(knn_score, 3),
+        "knn_score": round(normalized_knn_score, 3),
         "preference_similarity": round(preference_similarity, 3),
         "past_destination_similarity": round(content_score, 3),
         "off_season_score": round(off_season_score, 3),
@@ -456,6 +427,7 @@ def explain_recommendation(destination_id, user_id,
         explanation["match_summary"].append("has_similar_destinations")
 
     return clean_explanation(explanation)
+
 
 
 
