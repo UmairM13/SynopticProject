@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Container, Form, Button, Row, Col, Alert } from "react-bootstrap";
 import { signup } from "../api/UserApi";
 import { useNavigate } from "react-router-dom";
+import Select from "react-select";
+import { countryOptions } from "../assets/countries"; // your country list
 
-const countries = [
+const nationalities = [
   "British",
   "American",
   "Canadian",
@@ -27,6 +29,7 @@ const Register = () => {
     customNationality: "",
     currentCity: "",
     currentCountry: "",
+    customCurrentCountry: "",
     age: "",
   });
 
@@ -64,6 +67,11 @@ const Register = () => {
       return;
     }
 
+    if (form.currentCountry === "Other" && !form.customCurrentCountry.trim()) {
+      setError("Please enter your country.");
+      return;
+    }
+
     const payload = {
       email: form.email.trim(),
       password: form.password.trim(),
@@ -73,13 +81,16 @@ const Register = () => {
           ? form.customNationality.trim()
           : form.nationality,
       current_city: form.currentCity.trim(),
-      current_country: form.currentCountry.trim(),
+      current_country:
+        form.currentCountry === "Other"
+          ? form.customCurrentCountry.trim()
+          : form.currentCountry,
 
       // Temporary fields for onboarding
       preferred_climate: "Any",
       preferred_terrain: "Unknown",
       past_destinations: "",
-      budget: 1500,
+      budget: 1000,
       holiday_type: "Relaxed",
       trip_start_date: null,
       trip_end_date: null,
@@ -98,6 +109,8 @@ const Register = () => {
       } else {
         setError("Error signing up.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -108,6 +121,7 @@ const Register = () => {
         {error && <Alert variant="danger">{error}</Alert>}
         {success && <Alert variant="success">{success}</Alert>}
 
+        {/* Email + Age */}
         <Row className="mb-3">
           <Col md={6}>
             <Form.Label>Email</Form.Label>
@@ -132,6 +146,7 @@ const Register = () => {
           </Col>
         </Row>
 
+        {/* Password + Confirm Password */}
         <Row className="mb-3">
           <Col md={6}>
             <Form.Label>Password</Form.Label>
@@ -155,44 +170,38 @@ const Register = () => {
           </Col>
         </Row>
 
+        {/* Nationality + Current City */}
         <Row className="mb-3">
           <Col md={6}>
-            <Form.Label id="nationality-label" htmlFor="nationality">
-              Nationality
-            </Form.Label>
+            <Form.Label>Nationality</Form.Label>
             <Form.Select
-              id="nationality"
               name="nationality"
-              aria-labelledby="nationality-label"
               value={form.nationality}
               onChange={handleChange}
               required
+              style={{ color: form.nationality ? "#212529" : "#6c757d" }}
             >
-              <option value="">Select your nationality</option>
-              {countries.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              <option value="">Select your nationality...</option>
+              {nationalities.map((nat) => (
+                <option key={nat} value={nat}>
+                  {nat}
                 </option>
               ))}
             </Form.Select>
 
             {form.nationality === "Other" && (
-              <>
-                <Form.Label className="mt-2" htmlFor="customNationality">
-                  Your Nationality
-                </Form.Label>
-                <Form.Control
-                  id="customNationality"
-                  type="text"
-                  placeholder="Enter your nationality"
-                  name="customNationality"
-                  value={form.customNationality}
-                  onChange={handleChange}
-                  required
-                />
-              </>
+              <Form.Control
+                className="mt-2"
+                type="text"
+                name="customNationality"
+                placeholder="Enter your nationality"
+                value={form.customNationality}
+                onChange={handleChange}
+                required
+              />
             )}
           </Col>
+
           <Col md={6}>
             <Form.Label>Current City</Form.Label>
             <Form.Control
@@ -200,22 +209,83 @@ const Register = () => {
               name="currentCity"
               value={form.currentCity}
               onChange={handleChange}
+              required
             />
           </Col>
         </Row>
 
+        {/* Current Country */}
         <Row className="mb-4">
-          <Col md={6}>
+          <Col md={12}>
             <Form.Label>Current Country</Form.Label>
-            <Form.Control
-              type="text"
-              name="currentCountry"
-              value={form.currentCountry}
-              onChange={handleChange}
+            <Select
+              options={[...countryOptions, { label: "Other", value: "Other" }]}
+              value={
+                countryOptions.find((c) => c.value === form.currentCountry) ||
+                null
+              }
+              onChange={(selected) =>
+                setForm({
+                  ...form,
+                  currentCountry: selected?.value || "",
+                  customCurrentCountry: "",
+                })
+              }
+              placeholder="Select your country..."
+              isSearchable
+              styles={{
+                control: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: "#fff",
+                  borderColor: "#ced4da",
+                  minHeight: "38px",
+                  height: "38px",
+                  boxShadow: state.isFocused
+                    ? "0 0 0 0.2rem rgba(0,123,255,.25)"
+                    : "none",
+                  "&:hover": {
+                    borderColor: "#86b7fe",
+                  },
+                }),
+                valueContainer: (provided) => ({
+                  ...provided,
+                  height: "38px",
+                  padding: "0 8px",
+                }),
+                input: (provided) => ({
+                  ...provided,
+                  margin: "0px",
+                }),
+                indicatorSeparator: () => ({
+                  display: "none",
+                }),
+                indicatorsContainer: (provided) => ({
+                  ...provided,
+                  height: "38px",
+                }),
+                menu: (provided) => ({
+                  ...provided,
+                  zIndex: 9999,
+                }),
+              }}
             />
+
+            {form.currentCountry === "Other" && (
+              <Form.Control
+                className="mt-2"
+                type="text"
+                placeholder="Enter your country"
+                value={form.customCurrentCountry}
+                onChange={(e) =>
+                  setForm({ ...form, customCurrentCountry: e.target.value })
+                }
+                required
+              />
+            )}
           </Col>
         </Row>
 
+        {/* Submit Button */}
         <div className="d-grid">
           <Button
             className="btn-accent"

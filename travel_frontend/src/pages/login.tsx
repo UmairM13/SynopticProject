@@ -22,7 +22,7 @@ const Login: React.FC = () => {
     try {
       const userData = { email, password };
       await login(userData);
-      auth.login();
+      auth.login(email);
       await preprocessRecommendations(); // Preprocess recommendations after login
       const onboarded = localStorage.getItem("has_onboarded") === "true";
       navigate(onboarded ? "/recommendations" : "/onboarding");
