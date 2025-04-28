@@ -82,7 +82,7 @@ def compute_past_similarity(destination_name, user_id, features_df, similarity_m
     return np.sum(scores) / np.sum(weights) if weights else 0.0
 
 
-def recommend_destinations(user_id, n_recommendations=20, weight_kNN=0.24, weight_similarity=0.45, weight_past=0.26, weight_off_season=0.05):
+def recommend_destinations(user_id, users_df, destinations_df, past_destinations_df, n_recommendations=20, weight_kNN=0.24, weight_similarity=0.45, weight_past=0.26, weight_off_season=0.05):
     user = users_df[users_df['id'] == user_id]
     if user.empty:
         return "User not found"

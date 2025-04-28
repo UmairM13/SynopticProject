@@ -2,12 +2,14 @@ import os
 import pickle
 import pandas as pd
 import numpy as np
+import shutil
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer
 
 # Dynamically load data
-from recommendation_engine.recommender.data_collection import users_df, destinations_df, past_destinations_df
+from recommendation_engine.recommender.data_collection import fetch_fresh_data, users_df, destinations_df, past_destinations_df
 from recommendation_engine.recommender.data_loader import load_processed_data
 from recommendation_engine.recommender.data_loader import DataManager
+from recommendation_engine.recommender.model_cache import ModelCache
 
 # # For testing
 # from data_collection import users_df, destinations_df, past_destinations_df
@@ -47,10 +49,9 @@ def save_processed(users_df, destinations_df, preprocessors):
     os.makedirs(path, exist_ok=True)
 
     # Delete all old files first
-    for file in os.listdir(path):
-        file_path = os.path.join(path, file)
-        if os.path.isfile(file_path):
-            os.remove(file_path)
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    os.makedirs(path, exist_ok=True)
 
     # Save fresh
     with open(os.path.join(path, "preprocessors.pkl"), "wb") as f:
@@ -71,12 +72,9 @@ def run_preprocessing():
 
     from recommendation_engine.recommender.data_collection import users_df as fresh_users_df, destinations_df as fresh_destinations_df, past_destinations_df as fresh_past_destinations_df
     # from data_collection import users_df as fresh_users_df, destinations_df as fresh_destinations_df, past_destinations_df as fresh_past_destinations_df
-
-    users_df = fresh_users_df.copy()
-    destinations_df = fresh_destinations_df.copy()
-    past_destinations_df = fresh_past_destinations_df.copy()
     
-    
+    users_df, destinations_df, past_destinations_df = fetch_fresh_data()
+        
     # --- Destinations ---
     destinations_df, climate_encoded, climate_mlb = safe_encode_multi_label(destinations_df, "climate", "climate")
     destinations_df, terrain_encoded, terrain_mlb = safe_encode_multi_label(destinations_df, "terrain", "terrain")
@@ -130,9 +128,14 @@ def run_preprocessing():
 
     save_processed(users_df, destinations_df, preprocessors)
 
-    # 🚀 Then reload DataManager cache clean again
+    # Then reload DataManager cache clean again
     data_manager = DataManager.get_instance()
     data_manager.refresh()
+    
+    # Rebuild KNN model (IMPORTANT)
+    ModelCache.rebuild(data_manager.get_destinations())
+    
+    
     return {
         "status": "success",
         "message": "Preprocessing completed and saved.",

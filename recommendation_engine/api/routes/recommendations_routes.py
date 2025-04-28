@@ -45,7 +45,8 @@ def recommend_destinations(user_id: int):
 
 @router.get("/explanation/{user_id}/{destination_name}")
 def explain_destination(user_id: int, destination_name: int):
-
+    
+    DataManager.get_instance().refresh()
     
     explanation = controller.get_explanation_for_destination(user_id, destination_name)
     if isinstance(explanation, int):

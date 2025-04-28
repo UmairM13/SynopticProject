@@ -2,12 +2,21 @@ from fastapi import HTTPException
 from recommendation_engine.recommender.hybrid_recommender import recommend_destinations as hybrid_recommend, explain_recommendation
 from recommendation_engine.api.models.recommendation_models import UserRecommendation
 from sqlalchemy.orm import Session
+from recommendation_engine.recommender.data_loader import DataManager
 
 
 def get_recommendations_for_user(user_id: int):
-    return hybrid_recommend(user_id)
+    data_manager = DataManager.get_instance()
+    users_df = data_manager.get_users()
+    destinations_df = data_manager.get_destinations()
+    past_destinations_df = data_manager.get_past_destinations()
+
+    # Pass properly cleaned DataFrames into hybrid_recommend
+    return hybrid_recommend(user_id, users_df, destinations_df, past_destinations_df)
+
 
 def get_explanation_for_destination(user_id:int, destination_name:int):
+    DataManager.get_instance().refresh()
     return explain_recommendation(destination_name, user_id)
 
 def save_recommendations(db: Session, user_id: int, destination_id: int, name: str, explanation: str = ""):
