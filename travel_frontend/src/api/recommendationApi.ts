@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8000/travel/api";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const fetchRecommendations = async (token: string, user_id: string) => {
   const response = await fetch(`${BASE_URL}/recommendations/${user_id}`, {
