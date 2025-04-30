@@ -6,13 +6,17 @@ RUN apt-get update && apt-get install -y \
     gcc g++ gfortran libpq-dev libffi-dev libssl-dev build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+# Ensure Python can find your module
 ENV PYTHONPATH=/app
 
-COPY requirements.txt .
+# Copy files
+COPY .env .env
+COPY requirements.txt requirements.txt
+COPY recommendation_engine ./recommendation_engine
+
+# Install dependencies
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY recommendation_engine ./recommendation_engine
 
 EXPOSE 8000
 
