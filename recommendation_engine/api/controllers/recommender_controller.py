@@ -15,9 +15,16 @@ def get_recommendations_for_user(user_id: int):
     return hybrid_recommend(user_id, users_df, destinations_df, past_destinations_df)
 
 
-def get_explanation_for_destination(user_id:int, destination_name:int):
-    DataManager.get_instance().refresh()
-    return explain_recommendation(destination_name, user_id)
+def get_explanation_for_destination(user_id: int, destination_id: int):
+    data_manager = DataManager.get_instance()
+    data_manager.refresh()
+    
+    users_df = data_manager.get_users()
+    destinations_df = data_manager.get_destinations()
+    past_destinations_df = data_manager.get_past_destinations()
+    
+    return explain_recommendation(destination_id, user_id, users_df, destinations_df, past_destinations_df)
+
 
 def save_recommendations(db: Session, user_id: int, destination_id: int, name: str, explanation: str = ""):
     existing = db.query(UserRecommendation).filter_by(user_id=user_id, destination_id=destination_id).first()

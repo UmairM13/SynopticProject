@@ -211,6 +211,7 @@ def clean_explanation(explanation):
     
     
 def explain_recommendation(destination_id, user_id, 
+                           users_df, destinations_df, past_destinations_df,
                            weight_kNN=0.24, 
                            weight_similarity=0.45, 
                            weight_past=0.26, 
