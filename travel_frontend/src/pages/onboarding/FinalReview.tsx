@@ -2,11 +2,6 @@ import { Container, Button, ListGroup } from "react-bootstrap";
 
 interface FinalReviewProps {
   userData: {
-    email: string;
-    age: string;
-    nationality: string;
-    currentCity: string;
-    currentCountry: string;
     preferredTerrains: string[];
     preferredClimates: string[];
     holidayType: string;
@@ -24,19 +19,6 @@ const FinalReview = ({ userData, onEdit, onSubmit }: FinalReviewProps) => {
       <h2 className="mb-4 text-center">Review Your Preferences</h2>
 
       <ListGroup>
-        <ListGroup.Item>
-          <strong>Email:</strong> {userData.email}
-        </ListGroup.Item>
-        <ListGroup.Item>
-          <strong>Age:</strong> {userData.age}
-        </ListGroup.Item>
-        <ListGroup.Item>
-          <strong>Nationality:</strong> {userData.nationality}
-        </ListGroup.Item>
-        <ListGroup.Item>
-          <strong>Current Location:</strong> {userData.currentCity},{" "}
-          {userData.currentCountry}
-        </ListGroup.Item>
         <ListGroup.Item>
           <strong>Preferred Terrains:</strong>{" "}
           {userData.preferredTerrains.join(", ")}

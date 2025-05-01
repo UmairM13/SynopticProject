@@ -119,7 +119,6 @@ const Preferences = () => {
         updateFormData(data);
         handleFinalSubmit();
       }}
-      onSkip={() => handleFinalSubmit()}
     />,
   ];
 

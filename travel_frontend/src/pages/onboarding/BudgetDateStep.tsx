@@ -10,7 +10,6 @@ interface BudgetDateStepProps {
     trip_start_date: string;
     trip_end_date: string;
   }) => void;
-  onSkip: () => void;
 }
 
 const BudgetDateStep = ({
@@ -18,11 +17,22 @@ const BudgetDateStep = ({
   trip_start_date,
   trip_end_date,
   onContinue,
-  onSkip,
 }: BudgetDateStepProps) => {
-  const [localBudget, setLocalBudget] = useState(budget || "");
-  const [tripStart, setTripStart] = useState(trip_start_date || "");
-  const [tripEnd, setTripEnd] = useState(trip_end_date || "");
+  // Calculate default dates: one month from today, and +7 days after that
+  const today = new Date();
+  const defaultStart = new Date(today.setMonth(today.getMonth() + 1));
+  const defaultEnd = new Date(defaultStart);
+  defaultEnd.setDate(defaultEnd.getDate() + 7);
+
+  const formatDate = (date: Date) => date.toISOString().split("T")[0];
+
+  const [localBudget, setLocalBudget] = useState(budget || "1000");
+  const [tripStart, setTripStart] = useState(
+    trip_start_date || formatDate(defaultStart)
+  );
+  const [tripEnd, setTripEnd] = useState(
+    trip_end_date || formatDate(defaultEnd)
+  );
 
   const handleSubmit = () => {
     onContinue({
@@ -72,9 +82,6 @@ const BudgetDateStep = ({
         </Row>
 
         <div className="d-flex justify-content-between mt-4">
-          <Button variant="secondary" onClick={onSkip}>
-            Skip for now
-          </Button>
           <Button className="btn-accent" onClick={handleSubmit}>
             Continue
           </Button>

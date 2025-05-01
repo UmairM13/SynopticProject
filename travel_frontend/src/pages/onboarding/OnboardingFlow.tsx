@@ -105,16 +105,10 @@ const OnboardingFlow = () => {
         updateFormData(data);
         nextStep();
       }}
-      onSkip={nextStep}
     />,
     <FinalReview
       key="review"
       userData={{
-        email: "placeholder@email.com", // Replace with actual user data
-        age: "25",
-        nationality: "British",
-        currentCity: "London",
-        currentCountry: "UK",
         preferredTerrains: formData.preferred_terrain,
         preferredClimates: formData.preferred_climate,
         holidayType: formData.holiday_type[0] || "N/A",
