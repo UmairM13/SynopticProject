@@ -65,8 +65,7 @@ jobs:
         run: python recommendation_engine/database/dummy_data.py
 
       - name: Run preprocessing to generate data files
-        run: python recommendation_engine/recommender/data_preprocessing.py
-
+        run: python -m recommendation_engine.recommender.data_preprocessing
 
       - name: Run tests
         run: pytest
