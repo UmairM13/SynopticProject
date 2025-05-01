@@ -2,27 +2,27 @@ import pymysql.connections
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+def insert_dummy_data():
+    env_path = os.path.join(os.path.dirname(__file__), '../../.env')
+    load_dotenv(dotenv_path=env_path)
 
-# Fetch database connection details from environment variables
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
+    DB_USER = os.getenv("DB_USER")
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
+    DB_HOST = os.getenv("DB_HOST")
+    DB_NAME = os.getenv("DB_NAME")
 
-# Connect to the MySQL database
-connection = pymysql.connect(
-    host=DB_HOST,
-    user=DB_USER,
-    password=DB_PASSWORD,
-    database=DB_NAME
-)
+    connection = pymysql.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        autocommit=True
+    )
+    cursor = connection.cursor()
 
-cursor = connection.cursor()
-
-# Insert dummy data into destinations
-cursor.execute("""
+    try:
+        print("Inserting dummy data into destinations...")
+        cursor.execute("""
     INSERT INTO destinations (
     name, country, off_season_start, off_season_end, avg_daily_budget, currency,
     climate, terrain, language, safety_rating, holiday_type, IATA_code
@@ -77,13 +77,10 @@ cursor.execute("""
     ('Kotor', 'Montenegro', 'November', 'March', 80.00, 'EUR', 'Mediterranean', 'Coastal,Mountain', 'Montenegrin', 4.5, 'Relaxed,Cultural', 'TGD'), -- via Podgorica
     ('Muscat', 'Oman', 'May', 'September', 100.00, 'OMR', 'Arid', 'Urban,Coastal', 'Arabic', 4.7, 'Cultural,Nature', 'MCT');
     
-    """)
+    """) 
 
-connection.commit()
-
-
-# Insert dummy data into users first to avoid foreign key constraint errors
-cursor.execute("""
+        print("Inserting dummy data into users...")
+        cursor.execute("""
     INSERT INTO users (
         nationality, current_city, current_country, age,
         preferred_climate, preferred_terrain, past_destinations, budget,
@@ -123,12 +120,8 @@ cursor.execute("""
 """)
 
 
-
-# Commit users data first so that their IDs are available for reference in other tables
-connection.commit()
-
-# Insert dummy data into attractions
-cursor.execute("""
+        print("Inserting dummy data into attractions...")
+        cursor.execute("""
             INSERT INTO attractions (destination_id, name, type, description, entry_fee)
             VALUES
             (1, 'Eiffel Tower', 'Monument', 'Famous iron tower in Paris.', 25.00),
@@ -143,10 +136,9 @@ cursor.execute("""
             (10, 'Blue Lagoon', 'Nature', 'Famous geothermal spa in Iceland.', 50.00);
 """)
 
-connection.commit()
 
-# Insert dummy data into travel_costs (with valid user_id references)
-cursor.execute("""
+        print("Inserting dummy data into travel_costs...")
+        cursor.execute("""
     INSERT INTO travel_costs (destination_id, departure_city, departure_country, flight_cost, train_cost, hotel_cost, user_id)
     VALUES
     (1, 'London', 'UK', 150.00, 0.00, 120.00, 1),
@@ -171,8 +163,10 @@ cursor.execute("""
     (20, 'Vancouver', 'Canada', 600.00, 0.00, 150.00, 10);
 """)
 
-# Insert dummy data into past_destinations table
-cursor.execute("""
+
+
+        print("Inserting dummy data into past_destinations...")
+        cursor.execute("""
     INSERT INTO past_destinations (user_id, destination_name, trip_start_date, trip_end_date, rating, notes) VALUES
     (1, 'Bali', '2024-06-07', '2024-06-15', 4.8, 'Great nature and local food'),
     (1, 'Tokyo', '2023-12-10', '2023-12-20', 4.6, 'Loved the culture and efficiency'),
@@ -245,8 +239,8 @@ cursor.execute("""
     (10, 'Moscow', '2023-12-01', '2023-12-10', 4.3, 'Cold but beautiful snowy streets and festive vibes');
 """)
 
-
-cursor.execute("""
+        print("Inserting dummy data into user_recommendations...")
+        cursor.execute("""
     INSERT INTO user_recommendations (user_id, destination_id, destination_name, explanation, created_at) VALUES
     (1, 2, 'Bali', 'Saved for future surf and relaxation trip.', '2024-04-05 14:23:00'),
     (1, 7, 'Rome', 'Fascinated by the history and architecture.', '2024-04-10 10:15:00'),
@@ -270,11 +264,13 @@ cursor.execute("""
     (2, 19, 'Madrid', 'Experience Spanish culture and food.', '2024-05-03 11:55:00');
 """)
 
+        print("Dummy data inserted successfully!")
 
-# Commit changes and close the connection
-connection.commit()
-cursor.close()
-connection.close()
-
-
-print("Dummy data inserted successfully!")
+    finally:
+        cursor.close()
+        connection.close()
+        print("Database connection closed.")
+        
+        
+if __name__ == "__main__":
+    insert_dummy_data()

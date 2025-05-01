@@ -4,20 +4,31 @@ import pytest
 
 def test_create_user_success(client):
     payload = {
-        "email": "testuser@example.com",
-        "password": "password123"
+        "email": "testuser3@example.com",
+    "password": "password123",
+    "nationality": "Pakistani",
+    "current_city": "Lahore",
+    "current_country": "Pakistan",
+    "age": 25,
+    "preferred_climate": "any",
+    "preferred_terrain": "any",
+    "past_destinations": "",
+    "budget": 2000,
+    "holiday_type": "any",
+    "trip_start_date": "2025-06-01",
+    "trip_end_date": "2025-06-10"
     }
     response = client.post("/travel/api/users/", json=payload)
     assert response.status_code == 200
     json_data = response.json()
     assert "id" in json_data
-    assert json_data["email"] == "testuser@example.com"
+    assert json_data["email"] == "testuser3@example.com"
 
 # ---------------------- Login User ----------------------
 
 def test_login_success(client):
     payload = {
-        "email": "testuser@example.com",
+        "email": "testuser3@example.com",
         "password": "password123"
     }
     response = client.post("/travel/api/users/login", json=payload)
@@ -28,7 +39,7 @@ def test_login_success(client):
 
 def test_login_failure_wrong_password(client):
     payload = {
-        "email": "testuser@example.com",
+        "email": "testuser3@example.com",
         "password": "wrongpassword"
     }
     response = client.post("/travel/api/users/login", json=payload)
@@ -40,7 +51,7 @@ def test_get_current_user_success(client):
     response = client.get("/travel/api/users/me")
     assert response.status_code == 200
     json_data = response.json()
-    assert json_data["email"] == "testuser@example.com"
+    assert json_data["email"] == "testuser3@example.com"
 
 def test_get_current_user_unauthenticated():
     from fastapi.testclient import TestClient
@@ -88,5 +99,15 @@ def test_logout(client):
 # ---------------------- Delete User ----------------------
 
 def test_delete_user(client):
+    # Re-login to get a valid token if needed
+    payload = {
+        "email": "testuser3@example.com",
+        "password": "password123"
+    }
+    login_response = client.post("/travel/api/users/login", json=payload)
+    assert login_response.status_code == 200
+    session_token = login_response.json()["session_token"]
+    client.headers.update({"X-Authorization": session_token})
+
     response = client.delete("/travel/api/users/")
     assert response.status_code == 200
