@@ -24,6 +24,28 @@ def test_create_user_success(client):
     assert "id" in json_data
     assert json_data["email"] == "testuser3@example.com"
 
+def test_create_user_success_2(client):
+    payload = {
+        "email": "testuser@example.com",
+    "password": "password123",
+    "nationality": "British",
+    "current_city": "London",
+    "current_country": "UK",
+    "age": 25,
+    "preferred_climate": "any",
+    "preferred_terrain": "any",
+    "past_destinations": "",
+    "budget": 2000,
+    "holiday_type": "any",
+    "trip_start_date": "2025-06-01",
+    "trip_end_date": "2025-06-10"
+    }
+    response = client.post("/travel/api/users/", json=payload)
+    assert response.status_code == 200
+    json_data = response.json()
+    assert "id" in json_data
+    assert json_data["email"] == "testuser@example.com"
+
 # ---------------------- Login User ----------------------
 
 def test_login_success(client):
