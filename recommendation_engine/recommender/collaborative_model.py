@@ -4,6 +4,9 @@ from surprise.model_selection import train_test_split
 from recommendation_engine.recommender.data_loader import load_processed_data
 
 
+""""
+Collaborative Filtering Model for testing and comparison purposes.
+"""
 def prepare_collab_data():
     """Creates a user-item interaction matrix using the structured past_destinations table."""
     users_df, destinations_df, past_destinations_df = load_processed_data()
