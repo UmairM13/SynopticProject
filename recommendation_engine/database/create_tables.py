@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 def run_create_tables():
     # Load environment variables from .env file
     env_path = os.path.join(os.path.dirname(__file__), '../../.env')
-    load_dotenv(dotenv_path=env_path)
+    load_dotenv(dotenv_path=env_path, override=True)
 
     # Fetch database connection details
     DB_USER = os.getenv("DB_USER")

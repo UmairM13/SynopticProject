@@ -19,12 +19,26 @@ def prepare_collab_data():
         right_on="name_clean",
         how="inner"
     )
+    
+    print(merged.columns)
+    print(merged.head())
 
     if merged.empty:
         print("X No matched past destinations.")
         return pd.DataFrame()
 
-    ratings_df = merged[["user_id", "id"]].copy()
+    if 'id' in merged.columns:
+        ratings_df = merged[["user_id", "id"]].copy()
+    elif 'id_x' in merged.columns:
+        ratings_df = merged[["user_id", "id_x"]].copy()
+        ratings_df.rename(columns={"id_x": "id"}, inplace=True)
+    elif 'id_y' in merged.columns:
+        ratings_df = merged[["user_id", "id_y"]].copy()
+        ratings_df.rename(columns={"id_y": "id"}, inplace=True)
+    else:
+        raise KeyError("No 'id' column found after merge.")
+    
+
     ratings_df.rename(columns={"id": "destination_id"}, inplace=True)
     ratings_df["user_id"] = ratings_df["user_id"].astype(str)
     ratings_df["destination_id"] = ratings_df["destination_id"].astype(str)

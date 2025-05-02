@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 
 # Load environment variables
-load_dotenv()
+load_dotenv(override=True)
 
 # Database connection details
 DB_CONFIG = {

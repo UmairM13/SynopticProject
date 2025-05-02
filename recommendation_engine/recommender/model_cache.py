@@ -2,6 +2,15 @@ from sklearn.neighbors import NearestNeighbors
 import numpy as np
 
 class ModelCache:
+    
+    """
+    Singleton-style class to store and manage the system-wide KNN model.
+
+    Purpose:
+    - Keeps a shared, in-memory KNN model trained on the latest destination features.
+    - Allows different parts of the system to access the same trained model
+      without needing to rebuild it repeatedly.
+    """
     knn = None
 
     @classmethod

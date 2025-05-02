@@ -17,12 +17,28 @@ from recommendation_engine.recommender.model_cache import ModelCache
 # from data_loader import DataManager
 
 def encode_multi_label(df, column, prefix):
+    """
+    Encodes a multi-label text column (e.g., 'climate' with values 'tropical, sunny') 
+    into separate binary columns using MultiLabelBinarizer.
+    Returns:
+    - updated DataFrame (with column removed),
+    - encoded DataFrame (with prefixed binary columns),
+    - fitted MultiLabelBinarizer object (for inverse_transform if needed).
+    """
     mlb = MultiLabelBinarizer()
     df[column] = df[column].apply(lambda x: [item.strip() for item in x.split(",")] if isinstance(x, str) else [])
     encoded = pd.DataFrame(mlb.fit_transform(df[column]), columns=[f"{prefix}_{cls}" for cls in mlb.classes_])
     return df.drop(columns=[column]), encoded, mlb
 
 def one_hot_encode(df, features):
+    
+    """
+    One-hot encodes categorical features using sklearn's OneHotEncoder.
+    Returns:
+    - encoded DataFrame (with proper column names),
+    - fitted OneHotEncoder object.
+    """
+    
     ohe = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
     encoded = pd.DataFrame(ohe.fit_transform(df[features]))
     encoded.columns = ohe.get_feature_names_out(features)
@@ -30,6 +46,11 @@ def one_hot_encode(df, features):
 
 
 def safe_encode_multi_label(df, column, prefix):
+    
+    """
+    Wrapper around encode_multi_label that safely skips missing columns.
+    Useful when some columns are optional or may not exist in all datasets.
+    """
     if column not in df.columns:
         print(f"[Warning] Column '{column}' not found in DataFrame. Skipping.")
         return df, pd.DataFrame(), None
@@ -37,6 +58,11 @@ def safe_encode_multi_label(df, column, prefix):
 
 
 def scale_numerical(df, num_cols):
+    
+    """
+    Scales specified numerical columns using StandardScaler.
+    Keeps the original unscaled values in '_original' columns for reference.
+    """
     scaler = StandardScaler()
     df[num_cols] = df[num_cols].fillna(df[num_cols].median())
     for col in num_cols:
@@ -68,6 +94,17 @@ def save_processed(users_df, destinations_df, preprocessors):
 
 
 def run_preprocessing():
+    """
+    Main preprocessing pipeline:
+    - Loads raw user, destination, and past destination data.
+    - Applies multi-label and one-hot encoding.
+    - Scales numerical features.
+    - Saves all processed outputs and updates system caches.
+
+    Returns:
+    A summary dict with status and dataset counts.
+    """
+    
     global users_df, destinations_df, past_destinations_df
 
     from recommendation_engine.recommender.data_collection import users_df as fresh_users_df, destinations_df as fresh_destinations_df, past_destinations_df as fresh_past_destinations_df

@@ -16,7 +16,7 @@ from recommendation_engine.recommender.content_based_model import prepare_featur
 # Initialize data
 current_month = datetime.now().month
 
-# Load data
+# Load data manager (singleton instance) to access user, destination, and past destination data
 data_manager = DataManager.get_instance()
 users_df = data_manager.get_users()
 destinations_df = data_manager.get_destinations()
@@ -47,6 +47,16 @@ features_df, similarity_matrix = prepare_features(destinations_df)
 
 
 def compute_past_similarity(destination_name, user_id, features_df, similarity_matrix, past_destinations_df):
+    
+    """
+    Computes a time-weighted similarity score between the target destination 
+    and the user's past visited destinations.
+    We include this component to capture the idea that users may prefer destinations 
+    similar to places they've enjoyed before. By applying a decay factor, 
+    we prioritize more recent travel history, which is likely more relevant 
+    to current preferences.
+    """
+    
     now = pd.Timestamp.now()
     destination_name = destination_name.strip().lower()
     features_df = features_df.copy()
@@ -83,6 +93,13 @@ def compute_past_similarity(destination_name, user_id, features_df, similarity_m
 
 
 def recommend_destinations(user_id, users_df, destinations_df, past_destinations_df, n_recommendations=20, weight_kNN=0.24, weight_similarity=0.45, weight_past=0.26, weight_off_season=0.05):
+    """
+    Hybrid recommender combining:
+    - KNN feature similarity (based on numeric attributes)
+    - User preference match (climate, terrain, holiday type, budget)
+    - Past destination similarity (time-weighted)
+    - Off-season adjustment
+    """
     user = users_df[users_df['id'] == user_id]
     if user.empty:
         return "User not found"
@@ -119,7 +136,10 @@ def recommend_destinations(user_id, users_df, destinations_df, past_destinations
             normalized_knn_score = 1 - distances[0][i]
             normalized_knn_score = max(0, normalized_knn_score)
         
-        # Similarity calculation
+        #  # Computes Jaccard similarity between two sets:
+        # - If the user has no preference set (empty), we return 1 (neutral, full match).
+        # - If the destination has no tags (empty), we return 0 (no match).
+        # - Otherwise, we compute the Jaccard index: size of intersection / size of union.
         def jaccard(set1, set2):
             if not set1: return 1
             if not set2: return 0
@@ -190,6 +210,15 @@ def recommend_destinations(user_id, users_df, destinations_df, past_destinations
     return recommendations_df.sort_values('final_score', ascending=False).head(n_recommendations)
 
 def convert_numpy_types(obj):
+    """
+    Utility function to convert numpy-specific data types 
+    (e.g., np.bool_, np.int64, np.float64, np.ndarray)
+    into native Python types (bool, int, float, list).
+    This is important when preparing data to be serialized 
+    into JSON or other formats that do not support numpy types.
+    Without conversion, things like np.bool_ or np.float64 
+    can break JSON serialization.
+    """
     if isinstance(obj, (np.bool_, np.bool8)):
         return bool(obj)
     elif isinstance(obj, (np.integer,)):
@@ -202,6 +231,10 @@ def convert_numpy_types(obj):
 
 
 def clean_explanation(explanation):
+    """
+    Recursively traverses a nested data structure (dict or list)
+    and converts all contained numpy types into native Python types.
+    """
     if isinstance(explanation, dict):
         return {k: clean_explanation(v) for k, v in explanation.items()}
     elif isinstance(explanation, list):
