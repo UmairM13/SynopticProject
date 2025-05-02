@@ -32,7 +32,7 @@ Base.metadata.create_all(bind=engine)
 
 app.include_router(user_router, prefix="/travel/api/users", tags=["Users"])
 app.include_router(recommendations, prefix="/travel/api/recommendations", tags=["Recommendations"])
-app.include_router(analytics, prefix="/travel/api/analytics", tags=["Analytics"])
+app.include_router(analytics, prefix="/travel/api", tags=["Analytics"])
 app.include_router(destinations, prefix="/travel/api/destinations", tags=["Destinations"])
 app.include_router(search, prefix="/travel/api/search", tags=["Search"])
 
